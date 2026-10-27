@@ -36,7 +36,11 @@ export default async function ThreadPage({ params, searchParams }: Params) {
             <Link href="/messages" className="btn btn-ghost btn-sm back" aria-label="Back to inbox"><ChevronLeft /></Link>
             <span className="avatar avatar-sm">{other.display_name[0]?.toUpperCase()}</span>
             <div>
-              <Link href={`/users/${other.id}`} style={{ fontWeight: 700 }}>{other.display_name}</Link>
+              {other.id === systemUserId() ? (
+                <b>{other.display_name}</b>
+              ) : (
+                <Link href={`/users/${other.id}`} style={{ fontWeight: 700 }}>{other.display_name}</Link>
+              )}
               {about && <div className="small muted">About <Link className="link" href={`/listings/${about.id}`}>{lotNumber(about.id)} · {about.title}</Link></div>}
             </div>
           </div>

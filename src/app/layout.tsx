@@ -40,7 +40,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div className="ticker">
               <span className="dot" />
               <span>
-                <b style={{ color: "#fff" }}>{stats.live}</b> auctions live
+                {stats.live > 0 ? (
+                  <><b style={{ color: "#fff" }}>{stats.live}</b> {stats.live === 1 ? "auction" : "auctions"} live</>
+                ) : (
+                  <>
+                    <b style={{ color: "#fff" }}>{stats.sellers === 0 ? "Now open" : "No live auctions"}</b>
+                    {" · "}
+                    <Link href="/sell" style={{ color: "var(--brass-hi)" }}>{stats.sellers === 0 ? "list the first lots" : "list an item"}</Link>
+                  </>
+                )}
                 {stats.endingHour > 0 && (
                   <>
                     {" · "}

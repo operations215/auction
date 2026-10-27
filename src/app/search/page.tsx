@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SearchX } from "lucide-react";
+import { PackageOpen, SearchX } from "lucide-react";
 import { currentUser } from "@/lib/auth";
 import { CONDITIONS, categoryCounts, parseMoney, searchListings, watchedIds, type SearchOpts } from "@/lib/auctions";
 import { ListingCard } from "@/components/ListingCard";
@@ -51,7 +51,8 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     return `/search${s ? `?${s}` : ""}`;
   };
 
-  const heading = sp.q ? `Results for “${sp.q}”` : cat ? cat.name : sold ? "Recently sold" : "All auctions";
+  const filtered = [sp.q, sp.category, sp.condition, sp.min, sp.max, sp.ending, sp.noreserve].some(Boolean);
+  const heading = sp.q ?`Results for “${sp.q}”` : cat ? cat.name : sold ? "Recently sold" : "All auctions";
 
   return (
     <div className="wrap">
@@ -140,12 +141,28 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               {results.map((l) => <ListingCard key={l.id} l={l} watched={user && !sold ? watched.has(l.id) : undefined} />)}
             </div>
           ) : (
-            <div className="empty">
-              <SearchX />
-              <h3>No lots match that search</h3>
-              <p>Try fewer words, a different category, or check the sold items to see what things go for.</p>
-              <Link href="/search" className="btn">Browse all auctions</Link>
-            </div>
+            filtered ? (
+              <div className="empty">
+                <SearchX />
+                <h3>No lots match that search</h3>
+                <p>Try fewer words, a different category, or check the sold items to see what things go for.</p>
+                <Link href="/search" className="btn">Browse all auctions</Link>
+              </div>
+            ) : sold ? (
+              <div className="empty">
+                <PackageOpen />
+                <h3>Nothing has sold yet</h3>
+                <p>Finished auctions show up here with their final prices, so you can see what things go for.</p>
+                <Link href="/search" className="btn">Browse live auctions</Link>
+              </div>
+            ) : (
+              <div className="empty">
+                <PackageOpen />
+                <h3>No auctions are live right now</h3>
+                <p>Got kit in the attic? List it and yours will be the first lot collectors see here.</p>
+                <Link href="/sell" className="btn btn-brass">List an item</Link>
+              </div>
+            )
           )}
         </section>
       </div>

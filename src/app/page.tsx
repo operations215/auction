@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   BadgeCheck,
+  CircleCheck,
   Flame,
   Hourglass,
   Search,
@@ -12,7 +13,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { currentUser } from "@/lib/auth";
-import { categoryCounts, searchListings, siteStats, watchedIds } from "@/lib/auctions";
+import { categoryCounts, lotNumber, searchListings, siteStats, watchedIds } from "@/lib/auctions";
 import { HERO_CAMO } from "@/lib/camo";
 import { ListingCard } from "@/components/ListingCard";
 import { CategoryIcon } from "@/components/CategoryIcon";
@@ -62,32 +63,54 @@ export default async function Home() {
                 <Link key={p} href={`/search?q=${encodeURIComponent(p)}`}>{p}</Link>
               ))}
             </div>
-            <div className="hero-stats">
-              <div>
-                <div className="n">{stats.live}</div>
-                <div className="l">Live auctions</div>
+            {stats.live > 0 && (
+              <div className="hero-stats">
+                <div>
+                  <div className="n">{stats.live}</div>
+                  <div className="l">Live auctions</div>
+                </div>
+                <div>
+                  <div className="n">{stats.endingDay}</div>
+                  <div className="l">Ending in 24h</div>
+                </div>
+                <div>
+                  <div className="n">{stats.bids}</div>
+                  <div className="l">Bids placed</div>
+                </div>
+                <div>
+                  <div className="n">{stats.sellers}</div>
+                  <div className="l">Sellers</div>
+                </div>
               </div>
-              <div>
-                <div className="n">{stats.endingDay}</div>
-                <div className="l">Ending in 24h</div>
-              </div>
-              <div>
-                <div className="n">{stats.bids}</div>
-                <div className="l">Bids placed</div>
-              </div>
-              <div>
-                <div className="n">{stats.sellers}</div>
-                <div className="l">Sellers</div>
-              </div>
-            </div>
+            )}
           </div>
-          {featured && (
+          {featured ? (
             <div className="hero-feature">
               <span className="feature-tag chip chip-brass" style={{ height: 30, padding: "0 14px", fontSize: 13 }}>
                 <Flame /> Most-bid lot right now
               </span>
               <div className="card">
                 <ListingCard l={featured} />
+              </div>
+            </div>
+          ) : (
+            <div className="hero-launch">
+              <span className="feature-tag chip chip-brass" style={{ height: 30, padding: "0 14px", fontSize: 13 }}>
+                <Sparkles /> Now open
+              </span>
+              <div className="launch-card">
+                <div className="lot">{stats.sellers === 0 ? lotNumber(1) : "Next lot"} · awaiting a seller</div>
+                <h2>Your kit could be the {stats.sellers === 0 ? "first" : "next"} lot</h2>
+                <p>
+                  {stats.sellers === 0 ? "The depot just opened." : "Nothing is up for auction right now."} List an item
+                  in a few minutes and it goes straight to the front page.
+                </p>
+                <ul>
+                  <li><CircleCheck /> Add photos, condition and markings</li>
+                  <li><CircleCheck /> Set a starting bid and an optional reserve</li>
+                  <li><CircleCheck /> The winner pays you directly with PayPal</li>
+                </ul>
+                <Link href="/sell" className="btn btn-brass btn-lg">List the first item <ArrowRight /></Link>
               </div>
             </div>
           )}

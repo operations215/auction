@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, MessagesSquare, Settings } from "lucide-react";
 import { currentUser } from "@/lib/auth";
-import { db, parseDbDate } from "@/lib/db";
+import { db, parseDbDate, systemUserId } from "@/lib/db";
 import { formatDate, searchListings, sellerStats, watchedIds } from "@/lib/auctions";
 import { HERO_CAMO } from "@/lib/camo";
 import { ListingCard } from "@/components/ListingCard";
@@ -14,6 +14,8 @@ type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: s
 type Profile = { id: number; display_name: string; location: string; bio: string; created_at: string };
 
 function getProfile(id: number) {
+  // The automated notices account isn't a member, so it has no public profile.
+  if (id === systemUserId()) return undefined;
   return db().prepare("SELECT id, display_name, location, bio, created_at FROM users WHERE id = ?").get(id) as Profile | undefined;
 }
 
