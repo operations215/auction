@@ -9,6 +9,7 @@ import {
   MessagesSquare,
   PackageCheck,
   Plus,
+  Receipt,
   Star,
   Store,
   Trophy,
@@ -19,7 +20,8 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { cardsWhere, formatMoney, imageUrl, lotNumber, type ListingCard as Card } from "@/lib/auctions";
 import { demoPaymentsEnabled, paypalClientId, paypalConfigured } from "@/lib/paypal";
-import { confirmReceived, leaveReview, logout, markShipped, simulatePayment } from "@/app/actions";
+import { dueDate, FEE_DUE_DAYS, feeBalance, feePolicy, feeSettings, formatRate, sellerFees } from "@/lib/fees";
+import { confirmReceived, leaveReview, logout, markShipped, simulateFeePayment, simulatePayment } from "@/app/actions";
 import { Countdown } from "@/components/Countdown";
 import { ListingCard } from "@/components/ListingCard";
 import { LocalTime } from "@/components/LocalTime";
@@ -35,6 +37,7 @@ const TABS = [
   ["won", "Won", Trophy],
   ["selling", "Selling", Store],
   ["watching", "Watching", Heart],
+  ["fees", "Fees", Receipt],
   ["settings", "Settings", Star],
 ] as const;
 
@@ -43,6 +46,7 @@ const FLASH: Record<string, string> = {
   shipped: "Marked as shipped. The buyer has been sent the tracking details.",
   received: "Thanks for confirming delivery. Don't forget to rate the seller.",
   reviewed: "Thanks for your feedback. It helps every collector on Quartermaster.",
+  fees: "Fees paid. Thanks for supporting Quartermaster.",
 };
 
 function Thumb({ l }: { l: Card }) {
@@ -70,6 +74,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const names = new Map((d.prepare("SELECT id, display_name FROM users").all() as { id: number; display_name: string }[]).map((u) => [u.id, u.display_name]));
   const sellerPaypal = new Map((d.prepare("SELECT id, paypal_email FROM users").all() as { id: number; paypal_email: string }[]).map((u) => [u.id, !!u.paypal_email]));
   const watcherCount = (id: number) => (d.prepare("SELECT COUNT(*) AS n FROM watchlist WHERE listing_id = ?").get(id) as { n: number }).n;
+  const fees = sellerFees(uid);
+  const balance = feeBalance(uid);
+  const feeByListing = new Map(fees.map((f) => [f.listing_id, f]));
+  const showFees = fees.length > 0 || sellingLive.length + sellingDone.length > 0;
 
   const winningCount = bidding.filter((l) => l.high_bidder_id === uid).length;
   const toPay = won.filter((l) => !l.paid_at).length;
@@ -79,6 +87,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     won: won.length,
     selling: sellingLive.length + sellingDone.length,
     watching: watching.length,
+    ...(balance.count ? { fees: balance.count } : {}),
   };
   const demo = demoPaymentsEnabled();
   const paypalOn = paypalConfigured();
@@ -103,6 +112,11 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <Wallet /> <span>You have {toPay} won {toPay === 1 ? "item" : "items"} waiting for payment. <Link className="link" href="/account?tab=won">Pay now</Link></span>
         </div>
       )}
+      {balance.overdue && tab !== "fees" && (
+        <div className="alert alert-error" style={{ marginBottom: 18 }}>
+          <CircleAlert /> <span>Your seller fees are overdue. New listings are paused until you pay {formatMoney(balance.owedCents)}. <Link className="link" href="/account?tab=fees">Pay fees</Link></span>
+        </div>
+      )}
       {toShip > 0 && tab !== "selling" && (
         <div className="alert alert-info" style={{ marginBottom: 18 }}>
           <Truck /> <span>{toShip} sold {toShip === 1 ? "item is" : "items are"} paid and ready to ship. <Link className="link" href="/account?tab=selling">Add tracking</Link></span>
@@ -117,7 +131,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       </div>
 
       <nav className="tabs">
-        {TABS.map(([k, label, Icon]) => (
+        {TABS.filter(([k]) => k !== "fees" || showFees).map(([k, label, Icon]) => (
           <Link key={k} href={`/account?tab=${k}`} className={tab === k ? "active" : ""}>
             <Icon size={16} /> {label} {counts[k] != null && <span className="count">{counts[k]}</span>}
           </Link>
@@ -196,7 +210,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 <div className="stack" style={{ gap: 10, marginTop: 12 }}>
                   {!l.paid_at && (
                     paypalOn ? (
-                      sellerPaypal.get(l.seller_id) ? <PayPalCheckout listingId={l.id} clientId={paypalClientId()} /> : <div className="alert alert-warn">The seller hasn&apos;t connected PayPal yet. We&apos;ve let them know; message them if it takes long.</div>
+                      sellerPaypal.get(l.seller_id) ? <PayPalCheckout clientId={paypalClientId()} payload={{ listingId: l.id }} /> : <div className="alert alert-warn">The seller hasn&apos;t connected PayPal yet. We&apos;ve let them know; message them if it takes long.</div>
                     ) : demo ? (
                       <form action={simulatePayment}>
                         <input type="hidden" name="listingId" value={l.id} />
@@ -289,6 +303,15 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                         <>
                           <OrderTimeline l={l} />
                           {!l.paid_at && <p className="small muted" style={{ margin: "10px 0 0" }}>Waiting for the buyer to pay. Buyers are asked to pay within 3 days.</p>}
+                          {feeByListing.has(l.id) && (() => {
+                            const f = feeByListing.get(l.id)!;
+                            return (
+                              <p className="small muted" style={{ margin: "10px 0 0" }}>
+                                <Receipt size={14} style={{ verticalAlign: -2 }} /> Seller fee {formatMoney(f.amount_cents)} ({formatRate(f.rate_bp)}) ·{" "}
+                                {f.status === "owed" ? <Link className="link" href="/account?tab=fees">owed</Link> : f.status}
+                              </p>
+                            );
+                          })()}
                           {l.paid_at && l.ship_to && (
                             <div className="small" style={{ marginTop: 10 }}>
                               <b>Ship to:</b>
@@ -326,6 +349,71 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       {tab === "watching" && (watching.length ? (
         <div className="grid-cards">{watching.map((l) => <ListingCard key={l.id} l={l} watched />)}</div>
       ) : <div className="empty"><Heart /><h3>Your watchlist is empty</h3><p>Tap the heart on any lot to keep an eye on it.</p></div>)}
+
+      {tab === "fees" && (
+        <div className="stack" style={{ gap: 18 }}>
+          <div className={`card fee-summary${balance.overdue ? " overdue" : ""}`}>
+            <div>
+              <div className="eyebrow">Fee balance</div>
+              <div className="fee-big">{formatMoney(balance.owedCents)}</div>
+              <div className="small">
+                {balance.count === 0 ? (
+                  <span className="muted">You&apos;re all square. Nothing to pay.</span>
+                ) : balance.overdue ? (
+                  <b style={{ color: "var(--signal)" }}>Overdue. New listings are paused until you pay.</b>
+                ) : (
+                  <span className="muted">From {balance.count} {balance.count === 1 ? "sale" : "sales"}. Due by <b><LocalTime value={balance.dueBy!.toISOString()} withTime={false} /></b>.</span>
+                )}
+              </div>
+            </div>
+            {balance.owedCents > 0 && (
+              <div className="fee-pay">
+                {paypalOn ? (
+                  <PayPalCheckout clientId={paypalClientId()} endpoint="/api/paypal/fees" doneText="Fees paid. Thanks for supporting Quartermaster." />
+                ) : demo ? (
+                  <form action={simulateFeePayment}>
+                    <SubmitButton className="btn btn-brass btn-lg" pendingText="Processing…"><Wallet /> Pay {formatMoney(balance.owedCents)} (demo)</SubmitButton>
+                  </form>
+                ) : (
+                  <div className="alert alert-warn">Online fee payment opens once PayPal is connected.</div>
+                )}
+              </div>
+            )}
+          </div>
+          <p className="small muted" style={{ margin: 0 }}>
+            <Receipt size={14} style={{ verticalAlign: -2 }} /> {feePolicy()}
+            {(fees.length > 0 || feeSettings().rateBp > 0) && ` Each fee is due within ${FEE_DUE_DAYS} days.`}{" "}
+            <Link className="link" href="/how-it-works#fees">How fees work</Link>
+          </p>
+          {fees.length ? (
+            <div className="card table-wrap">
+              <table className="table">
+                <thead><tr><th>Item</th><th className="num">Sold for</th><th className="num">Fee</th><th>Charged</th><th>Status</th></tr></thead>
+                <tbody>
+                  {fees.map((f) => {
+                    const late = f.status === "owed" && dueDate(f.created_at).getTime() < Date.now();
+                    return (
+                      <tr key={f.id}>
+                        <td><Link className="link mono small" href={`/listings/${f.listing_id}`}>{lotNumber(f.listing_id)}</Link><div>{f.title}</div></td>
+                        <td className="num">{formatMoney(f.sale_cents)}</td>
+                        <td className="num"><b>{formatMoney(f.amount_cents)}</b><div className="small muted">{formatRate(f.rate_bp)}</div></td>
+                        <td className="small"><LocalTime value={f.created_at} withTime={false} /></td>
+                        <td>
+                          <span className={`chip ${late ? "chip-signal" : f.status === "owed" ? "chip-warn" : f.status === "paid" ? "chip-go" : ""}`}>
+                            {late ? "Overdue" : f.status === "owed" ? "Owed" : f.status === "paid" ? "Paid" : "Waived"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="empty"><Receipt /><h3>No fees yet</h3><p>When one of your items sells and the buyer pays, its fee shows up here.</p></div>
+          )}
+        </div>
+      )}
 
       {tab === "settings" && <ProfileForm user={user} />}
     </div>

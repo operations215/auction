@@ -16,6 +16,17 @@ import {
 } from "@/lib/auctions";
 import { readPhotos, writePhoto } from "@/lib/uploads";
 import { demoPaymentsEnabled } from "@/lib/paypal";
+import {
+  chargeSaleFee,
+  FEE_DUE_DAYS,
+  feeBalance,
+  feeNotice,
+  MAX_RATE_BP,
+  openFeePayment,
+  saveFeeSettings,
+  settleFeePayment,
+  waiveFee,
+} from "@/lib/fees";
 
 export type FormState = { error?: string; ok?: string; fields?: Record<string, string> } | undefined;
 
@@ -120,6 +131,8 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
   ])
     fields[k] = str(fd, k);
   const fail = (error: string): FormState => ({ error, fields });
+  if (feeBalance(user.id).overdue)
+    return fail(`You have seller fees that are more than ${FEE_DUE_DAYS} days old. Pay them from My Quartermaster › Fees, then publish your listing.`);
 
   const title = fields.title;
   if (title.length < 8 || title.length > 90) return fail("Give your item a title of 8 to 90 characters.");
@@ -271,11 +284,21 @@ export async function simulatePayment(fd: FormData) {
     db()
       .prepare("UPDATE listings SET paid_at = datetime('now'), payment_ref = ?, ship_to = ? WHERE id = ? AND paid_at IS NULL")
       .run(`DEMO-${Date.now().toString(36).toUpperCase()}`, `${user.display_name}\n(Demo payment: the buyer's PayPal shipping address appears here)\n${user.location}`, id);
+    const fee = chargeSaleFee(l);
     sendSystemMessage(l.seller_id, id,
-      `Payment received for "${l.title}" (demo payment). Please ship the item and add tracking from your seller dashboard.`);
+      `Payment received for "${l.title}" (demo payment). Please ship the item and add tracking from your seller dashboard.${feeNotice(fee)}`);
   }
   refreshAll();
   redirect(`/account?tab=won&flash=paid`);
+}
+
+export async function simulateFeePayment() {
+  const user = await requireUser("/account?tab=fees");
+  if (!demoPaymentsEnabled()) redirect("/account?tab=fees");
+  const p = openFeePayment(user.id);
+  if (p) settleFeePayment(p.id, `DEMO-${Date.now().toString(36).toUpperCase()}`);
+  refreshAll();
+  redirect("/account?tab=fees&flash=fees");
 }
 
 export async function markShipped(fd: FormData) {
@@ -353,4 +376,33 @@ export async function resolveReport(fd: FormData) {
   }
   refreshAll();
   redirect("/admin");
+}
+
+/* ---------------------------------------------------------------- seller fees (staff) */
+
+export async function updateFeeSettings(fd: FormData) {
+  const user = await requireUser("/admin");
+  if (!user.is_admin) redirect("/");
+  const rate = str(fd, "rate").replace("%", "");
+  const start = str(fd, "start");
+  const rateBp = Math.round(Number(rate) * 100);
+  const startDay = new Date(`${start}T00:00:00Z`);
+  const validStart = !start || (/^\d{4}-\d{2}-\d{2}$/.test(start) && !Number.isNaN(startDay.getTime()) && startDay.toISOString().startsWith(start));
+  if (rate === "" || !Number.isFinite(rateBp) || rateBp < 0 || rateBp > MAX_RATE_BP || !validStart) redirect("/admin?fees=invalid#fees");
+  saveFeeSettings({ rateBp, start });
+  refreshAll();
+  redirect("/admin?fees=saved#fees");
+}
+
+export async function waiveSellerFee(fd: FormData) {
+  const user = await requireUser("/admin");
+  if (!user.is_admin) redirect("/");
+  const id = Number(fd.get("feeId"));
+  const fee = db().prepare("SELECT seller_id, listing_id, amount_cents FROM fees WHERE id = ?").get(id) as
+    | { seller_id: number; listing_id: number; amount_cents: number }
+    | undefined;
+  if (fee && waiveFee(id))
+    sendSystemMessage(fee.seller_id, fee.listing_id, `The ${formatMoney(fee.amount_cents)} seller fee for this sale has been waived. You don't owe anything for it.`);
+  refreshAll();
+  redirect("/admin?fees=waived#fees");
 }

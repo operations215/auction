@@ -46,6 +46,16 @@ items, bid against each other, pay the seller through PayPal, and rate each othe
 - Without PayPal keys, development builds show a clearly labelled "Simulate PayPal payment (demo)" button
   so the whole flow can be tried end to end
 
+**Seller fees (how the site makes money)**
+- When a buyer pays for an item, the seller owes the site a percentage of the winning bid (5% by default,
+  shipping not included). Nothing is owed if the buyer never pays
+- Fees build up under **My Quartermaster › Fees**, and sellers pay them with PayPal into the site's own
+  PayPal account (the one the PayPal keys belong to)
+- Each fee is due within 30 days. A seller with an older unpaid fee can't list new items until they pay;
+  their live auctions carry on
+- Staff set the rate and the date fees start from on the **Moderation** page, see who owes what, and can
+  waive a fee. A new site starts with fees switched on 60 days after it first runs, so early sellers sell free
+
 ## Run it locally
 
 You need Node.js 20 or newer.
@@ -79,9 +89,9 @@ payment button in a production build for demos.
    buyers' payments land.
 4. Switch to `PAYPAL_ENV=live` with live credentials when you launch.
 
-Taking a commission on each sale requires PayPal's marketplace program (PayPal Complete Payments /
-Commerce Platform partner approval). Once approved, a platform fee can be added to the order in
-`src/lib/paypal.ts`.
+Seller fees are paid in a separate PayPal payment into your own account. Taking the fee out of the buyer's
+payment automatically would need PayPal's marketplace program (Commerce Platform partner approval); once
+approved, a platform fee can be added to the buyer's order in `src/lib/paypal.ts`.
 
 ## Deploying
 
@@ -112,12 +122,14 @@ the **Moderation** page.
 ```
 src/
   app/                 pages and server actions (actions.ts)
-    api/paypal/        create and capture PayPal orders
+    api/paypal/        create and capture PayPal orders (buyers paying sellers)
+    api/paypal/fees/   create and capture fee payments (sellers paying the site)
     api/images/        serves uploaded photos
   components/          bid box, gallery, countdown, forms, cards
   lib/
     auctions.ts        bidding engine, increments, anti-sniping, auction closing, queries
     paypal.ts          PayPal Orders v2 client
+    fees.ts            seller fees: charging, balances, payments, settings
     db.ts              schema and connection
 scripts/
   seed.ts              demo data

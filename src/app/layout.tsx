@@ -152,6 +152,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <li><Link href="/sell">List an item</Link></li>
                   <li><Link href="/rules">Listing rules</Link></li>
                   <li><Link href="/how-it-works#selling">Seller guide</Link></li>
+                  <li><Link href="/how-it-works#fees">Seller fees</Link></li>
                   <li><Link href="/account?tab=selling">Seller dashboard</Link></li>
                 </ul>
               </div>

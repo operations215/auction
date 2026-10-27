@@ -601,6 +601,18 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
 .empty svg { width: 46px; height: 46px; color: var(--khaki); margin: 0 auto 12px; }
 .empty h3 { color: var(--ink); }
 
+/* ---------- Seller fees ---------- */
+.fee-summary { padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; border-left: 5px solid var(--brass); }
+.fee-summary.overdue { border-left-color: var(--signal); background: linear-gradient(90deg, var(--signal-bg), var(--surface) 60%); }
+.fee-summary h2 { margin: 4px 0 6px; }
+.fee-summary p { margin: 0; color: var(--ink-2); max-width: 560px; }
+.fee-big { font-family: var(--font-head); font-size: 46px; font-weight: 800; line-height: 1; margin: 6px 0 8px; }
+.fee-pay { min-width: 260px; }
+.fee-note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius); background: var(--surface-2); color: var(--ink-2); font-size: 13.5px; margin: 0 0 16px; }
+.fee-note svg { flex: none; width: 17px; height: 17px; margin-top: 1px; color: var(--brass-lo); }
+.admin-fees { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .admin-fees { grid-template-columns: 1fr; } }
+
 /* ---------- Listing page ---------- */
 .crumbs { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-3); padding: 18px 0 14px; flex-wrap: wrap; }
 .crumbs a:hover { color: var(--ink); text-decoration: underline; }

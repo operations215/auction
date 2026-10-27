@@ -6,8 +6,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import bcrypt from "bcryptjs";
-import { DATA_DIR, UPLOAD_DIR, db, systemUserId, toDbDate } from "../src/lib/db";
+import { DATA_DIR, UPLOAD_DIR, db, parseDbDate, systemUserId, toDbDate } from "../src/lib/db";
 import { finalizeEndedAuctions, placeBid } from "../src/lib/auctions";
+import { chargeSaleFee, saveFeeSettings } from "../src/lib/fees";
 import { art, type ArtOpts, type Kind } from "./art";
 
 const PASSWORD = "surplus123";
@@ -462,6 +463,26 @@ for (const { id, l } of ended) {
     );
 }
 
+/* ------------------------------------------------------------------ seller fees */
+
+// In the demo, the 5% fee was already on when these items sold. Sellers have paid the fees from
+// sales more than ten days old; the rest are still owed.
+saveFeeSettings({ rateBp: 500, start: "" });
+type Sale = { id: number; seller_id: number; current_price_cents: number; ends_at: string; paid_at: string };
+for (const sale of d.prepare("SELECT id, seller_id, current_price_cents, ends_at, paid_at FROM listings WHERE paid_at IS NOT NULL ORDER BY id").all() as Sale[])
+  if (chargeSaleFee(sale)) d.prepare("UPDATE fees SET created_at = ? WHERE listing_id = ?").run(sale.paid_at, sale.id);
+type Fee = { id: number; seller_id: number; amount_cents: number; created_at: string };
+const settledFees = d.prepare("SELECT id, seller_id, amount_cents, created_at FROM fees WHERE created_at < ? ORDER BY id").all(toDbDate(new Date(now - 10 * 864e5))) as Fee[];
+for (const sellerId of new Set(settledFees.map((f) => f.seller_id))) {
+  const fees = settledFees.filter((f) => f.seller_id === sellerId);
+  const paidAt = toDbDate(new Date(parseDbDate(fees[fees.length - 1].created_at).getTime() + 2 * 864e5));
+  const paymentId = d
+    .prepare("INSERT INTO fee_payments (seller_id, amount_cents, fee_ids, payment_ref, created_at, paid_at) VALUES (?, ?, ?, ?, ?, ?)")
+    .run(sellerId, fees.reduce((sum, f) => sum + f.amount_cents, 0), JSON.stringify(fees.map((f) => f.id)), `DEMO-FEES-${sellerId}`, paidAt, paidAt).lastInsertRowid;
+  const settle = d.prepare("UPDATE fees SET status = 'paid', payment_id = ?, settled_at = ? WHERE id = ?");
+  for (const f of fees) settle.run(paymentId, paidAt, f.id);
+}
+
 // Older notices are read; keep the demo account's latest ones unread so the inbox badge shows.
 d.prepare("UPDATE messages SET read_at = created_at WHERE recipient_id != ?").run(ID.demo_collector);
 
@@ -503,6 +524,6 @@ d.prepare("INSERT INTO reports (listing_id, reporter_id, reason, details) VALUES
 );
 
 const count = (sql: string) => (d.prepare(sql).get() as { n: number }).n;
-console.log(`Seeded ${count("SELECT COUNT(*) AS n FROM users") - 1} members, ${count("SELECT COUNT(*) AS n FROM listings")} listings (${count("SELECT COUNT(*) AS n FROM listings WHERE status = 'active'")} live), ${count("SELECT COUNT(*) AS n FROM bids")} bids, ${count("SELECT COUNT(*) AS n FROM reviews")} reviews.`);
+console.log(`Seeded ${count("SELECT COUNT(*) AS n FROM users") - 1} members, ${count("SELECT COUNT(*) AS n FROM listings")} listings (${count("SELECT COUNT(*) AS n FROM listings WHERE status = 'active'")} live), ${count("SELECT COUNT(*) AS n FROM bids")} bids, ${count("SELECT COUNT(*) AS n FROM reviews")} reviews, ${count("SELECT COUNT(*) AS n FROM fees")} seller fees (${count("SELECT COUNT(*) AS n FROM fees WHERE status = 'owed'")} owed).`);
 console.log(`System notices from user #${systemUserId()}.`);
 console.log(`Log in as demo@quartermaster.test (buyer and seller) or staff@quartermaster.test (moderator). Password: ${PASSWORD}`);

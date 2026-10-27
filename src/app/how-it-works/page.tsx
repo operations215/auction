@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, CalendarClock, Gavel, ShieldCheck, Star, Truck, Wallet } from "lucide-react";
+import { BadgeCheck, CalendarClock, Gavel, Receipt, ShieldCheck, Star, Truck, Wallet } from "lucide-react";
 import { bidIncrement, formatMoney } from "@/lib/auctions";
+import { FEE_DUE_DAYS, feeSettings, formatDay, formatRate, freeUntil } from "@/lib/fees";
 
 export const metadata: Metadata = { title: "How it works" };
 
 const TIERS = [0, 100, 500, 2500, 10000, 25000, 50000, 100000, 250000];
 
 export default function HowItWorks() {
+  const fees = feeSettings();
+  const until = freeUntil(fees);
+  const rate = formatRate(fees.rateBp);
   return (
     <div className="wrap">
       <div className="page-head">
@@ -85,6 +89,26 @@ export default function HowItWorks() {
           <li>When the auction ends, the winner pays straight into your PayPal account. We notify you the moment they pay.</li>
           <li>Ship promptly, add tracking from your seller dashboard, and collect great feedback.</li>
           <li>You can cancel a listing any time before the first bid.</li>
+        </ul>
+
+        <h2 id="fees"><Receipt size={22} style={{ verticalAlign: -3 }} /> Fees</h2>
+        <ul>
+          <li><b>Buyers pay no fees.</b> You pay the winning bid plus the seller&apos;s shipping cost, and nothing more.</li>
+          {fees.rateBp > 0 ? (
+            <li>
+              <b>Listing is free.</b> When an item sells and the buyer pays, the seller owes {rate} of the winning bid.
+              Shipping isn&apos;t included, and nothing is owed if the buyer never pays.
+            </li>
+          ) : (
+            <li><b>Listing and selling are free.</b> There are no seller fees right now.</li>
+          )}
+          {fees.rateBp > 0 && until && <li><b>Launch offer:</b> no seller fees on auctions that end before {formatDay(until)}.</li>}
+          <li>
+            Fees add up under <Link href="/account?tab=fees">My Quartermaster › Fees</Link>. Pay them with PayPal whenever
+            you like, as long as each one is paid within {FEE_DUE_DAYS} days. If any fee is older than that, you can&apos;t
+            list new items until it&apos;s paid. Your live auctions carry on as normal.
+          </li>
+          <li>PayPal&apos;s own processing fees on the payments you receive are separate, and go to PayPal.</li>
         </ul>
         <p>
           Ready? <Link href="/sell">List your first item</Link>, and read the <Link href="/rules">listing rules</Link> first.

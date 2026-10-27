@@ -4,7 +4,8 @@ import { lotNumber, type ListingRow } from "./auctions";
 
 /**
  * PayPal Checkout (Orders v2). The buyer pays the seller directly: each order names the
- * seller's PayPal email as the payee, so funds never sit with the platform.
+ * seller's PayPal email as the payee, so buyers' money never sits with the platform.
+ * Seller fee orders name no payee, so they pay into the PayPal account the keys belong to.
  *
  * Configure with PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET and PAYPAL_ENV=sandbox|live.
  */
@@ -97,6 +98,27 @@ export async function createOrder(l: ListingRow, payeeEmail: string): Promise<st
         ],
       },
     ],
+  });
+  return order.id;
+}
+
+export function feeCustomId(paymentId: number) {
+  return `fees-${paymentId}`;
+}
+
+/** A seller paying the fees they owe. The money goes to the site's own PayPal account. */
+export async function createFeeOrder(paymentId: number, amountCents: number, count: number): Promise<string> {
+  const order = await api<{ id: string }>("/v2/checkout/orders", {
+    intent: "CAPTURE",
+    purchase_units: [
+      {
+        reference_id: feeCustomId(paymentId),
+        custom_id: feeCustomId(paymentId),
+        description: `Quartermaster seller fees (${count} ${count === 1 ? "sale" : "sales"})`,
+        amount: money(amountCents),
+      },
+    ],
+    application_context: { brand_name: "Quartermaster", shipping_preference: "NO_SHIPPING" },
   });
   return order.id;
 }

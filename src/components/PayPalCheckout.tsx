@@ -28,12 +28,26 @@ function loadSdk(clientId: string) {
   return sdkPromise;
 }
 
-/** Official PayPal Smart Buttons. The server creates and captures the order, so amounts can't be tampered with. */
-export function PayPalCheckout({ listingId, clientId }: { listingId: number; clientId: string }) {
+/**
+ * Official PayPal Smart Buttons. The server creates and captures the order, so amounts can't be tampered with.
+ * `endpoint` names the route pair (`/create` and `/capture`) and `payload` is sent to both.
+ */
+export function PayPalCheckout({
+  clientId,
+  endpoint = "/api/paypal",
+  payload = {},
+  doneText = "Payment complete. The seller has been notified.",
+}: {
+  clientId: string;
+  endpoint?: string;
+  payload?: Record<string, string | number>;
+  doneText?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const body = JSON.stringify(payload);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,20 +59,20 @@ export function PayPalCheckout({ listingId, clientId }: { listingId: number; cli
           style: { layout: "vertical", color: "gold", shape: "rect", label: "pay" },
           createOrder: async () => {
             setError(null);
-            const res = await fetch("/api/paypal/create", {
+            const res = await fetch(`${endpoint}/create`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ listingId }),
+              body,
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json.error ?? "Couldn't start the payment.");
             return json.id;
           },
           onApprove: async (data: { orderID: string }) => {
-            const res = await fetch("/api/paypal/capture", {
+            const res = await fetch(`${endpoint}/capture`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ listingId, orderId: data.orderID }),
+              body: JSON.stringify({ ...JSON.parse(body), orderId: data.orderID }),
             });
             const json = await res.json();
             if (!res.ok) return setError(json.error ?? "Payment failed. You have not been charged.");
@@ -74,9 +88,9 @@ export function PayPalCheckout({ listingId, clientId }: { listingId: number; cli
       cancelled = true;
       buttons?.close?.();
     };
-  }, [clientId, listingId, router]);
+  }, [clientId, endpoint, body, router]);
 
-  if (done) return <div className="alert alert-ok">Payment complete. The seller has been notified.</div>;
+  if (done) return <div className="alert alert-ok">{doneText}</div>;
   return (
     <div>
       <div ref={ref} style={{ minHeight: 45, maxWidth: 360 }} />

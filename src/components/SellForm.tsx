@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
-import { BadgeCheck, CircleAlert, Gavel, ImagePlus, RotateCcw, Star, Timer } from "lucide-react";
+import { BadgeCheck, CircleAlert, Gavel, ImagePlus, Receipt, RotateCcw, Star, Timer } from "lucide-react";
 import { createListing, type FormState } from "@/app/actions";
 
 type Photo = { file: File; url: string };
@@ -31,6 +31,7 @@ export function SellForm(props: {
   conditions: readonly string[];
   paypalEmail: string;
   location: string;
+  feeNote: string;
 }) {
   const [state, action] = useActionState<FormState, FormData>(createListing, undefined);
   const [pending, start] = useTransition();
@@ -197,6 +198,10 @@ export function SellForm(props: {
             <label htmlFor="paypal_email">PayPal email for payment</label>
             <input id="paypal_email" name="paypal_email" type="email" className="input" required defaultValue={f.paypal_email ?? props.paypalEmail} placeholder="you@example.com" />
             <span className="hint">The winning bidder pays straight into this PayPal account. It&apos;s never shown publicly.</span>
+          </div>
+          <div className="fee-note">
+            <Receipt />
+            <span>{props.feeNote} <a className="link" href="/how-it-works#fees" target="_blank">How fees work</a></span>
           </div>
           <div className="stack" style={{ gap: 10 }}>
             <label className="check"><input type="checkbox" name="authenticity_guarantee" defaultChecked /> <span><b>I guarantee this item is original</b>, not a reproduction, unless the title says otherwise. Adds an authenticity badge.</span></label>

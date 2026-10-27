@@ -126,6 +126,38 @@ CREATE TABLE IF NOT EXISTS reports (
   status TEXT NOT NULL DEFAULT 'open',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+-- Seller fees: one per paid sale, owed to the site until the seller pays it (or staff waive it).
+CREATE TABLE IF NOT EXISTS fee_payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  seller_id INTEGER NOT NULL REFERENCES users(id),
+  amount_cents INTEGER NOT NULL,
+  fee_ids TEXT NOT NULL, -- JSON array of the fees this payment covers
+  paypal_order_id TEXT,
+  payment_ref TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  paid_at TEXT
+);
+CREATE INDEX IF NOT EXISTS fee_payments_order ON fee_payments(paypal_order_id);
+
+CREATE TABLE IF NOT EXISTS fees (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  listing_id INTEGER NOT NULL UNIQUE REFERENCES listings(id),
+  seller_id INTEGER NOT NULL REFERENCES users(id),
+  sale_cents INTEGER NOT NULL,
+  rate_bp INTEGER NOT NULL, -- basis points: 500 = 5%
+  amount_cents INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'owed', -- owed | paid | waived
+  payment_id INTEGER REFERENCES fee_payments(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  settled_at TEXT
+);
+CREATE INDEX IF NOT EXISTS fees_seller ON fees(seller_id, status);
 `;
 
 export const CATEGORIES: { slug: string; name: string; description: string }[] = [
@@ -161,6 +193,9 @@ function open(): Database.Database {
   db.prepare(
     "INSERT OR IGNORE INTO users (email, password_hash, display_name, bio) VALUES (?, '!', 'Quartermaster', ?)"
   ).run(SYSTEM_EMAIL, "Automated notices about your bids, sales and orders.");
+  // Default seller fee: 5%, starting 60 days after the site first runs so early sellers sell free.
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('fee_rate_bp', '500')").run();
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('fees_start', date('now', '+60 days'))").run();
   return db;
 }
 
