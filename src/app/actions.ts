@@ -30,6 +30,12 @@ function refreshAll() {
   revalidatePath("/", "layout");
 }
 
+/** Accounts listed in ADMIN_EMAILS (comma-separated) get the moderation tools when they sign up or log in. */
+function grantAdminIfListed(userId: number, email: string) {
+  const admins = (process.env.ADMIN_EMAILS ?? "").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
+  if (admins.includes(email)) db().prepare("UPDATE users SET is_admin = 1 WHERE id = ?").run(userId);
+}
+
 /* ---------------------------------------------------------------- accounts */
 
 export async function signup(_: FormState, fd: FormData): Promise<FormState> {
@@ -56,6 +62,7 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
   const res = d
     .prepare("INSERT INTO users (email, password_hash, display_name, location) VALUES (?, ?, ?, ?)")
     .run(email, hashPassword(password), name, location);
+  grantAdminIfListed(Number(res.lastInsertRowid), email);
   await createSession(Number(res.lastInsertRowid));
   redirect(safeNext(str(fd, "next") || "/"));
 }
@@ -79,6 +86,7 @@ export async function login(_: FormState, fd: FormData): Promise<FormState> {
     return { error: "That email and password don't match.", fields: { email } };
   }
   failures.delete(email);
+  grantAdminIfListed(user.id, email);
   await createSession(user.id);
   redirect(safeNext(str(fd, "next") || "/"));
 }

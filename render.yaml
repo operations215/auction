@@ -1,0 +1,26 @@
+# Render Blueprint: New > Blueprint in the Render dashboard, then pick this repository.
+services:
+  - type: web
+    name: quartermaster
+    runtime: node
+    plan: starter # persistent disks need a paid instance
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /how-it-works
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATA_DIR
+        value: /var/data
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+    disk:
+      name: quartermaster-data
+      mountPath: /var/data
+      sizeGB: 1

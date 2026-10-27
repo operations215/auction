@@ -89,6 +89,13 @@ The app stores its database (SQLite) and photos on disk in `data/` (or `DATA_DIR
 with a **persistent disk**: for example a small VPS, Render or Railway with a volume, or Fly.io with a volume.
 Serverless hosts like Vercel would need the database moved to Postgres and photos to object storage first.
 
+**Render:** `render.yaml` is a ready-made Blueprint. In Render, choose **New › Blueprint**, pick this repo,
+and fill in the prompted values (PayPal keys and `ADMIN_EMAILS`). It creates a web service with a 1 GB disk
+mounted at `/var/data` for the database and photos.
+
+A live site starts empty (no demo data). Put your own email in `ADMIN_EMAILS`, then sign up with it to get
+the **Moderation** page.
+
 ## How it's built
 
 - [Next.js 15](https://nextjs.org) App Router with server components and server actions, TypeScript
