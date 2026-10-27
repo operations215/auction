@@ -1,4 +1,5 @@
 # Render Blueprint: New > Blueprint in the Render dashboard, then pick this repository.
+# Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in the service's Environment tab once you have PayPal keys.
 services:
   - type: web
     name: quartermaster
@@ -14,10 +15,6 @@ services:
         value: /var/data
       - key: PAYPAL_ENV
         value: sandbox
-      - key: PAYPAL_CLIENT_ID
-        sync: false
-      - key: PAYPAL_CLIENT_SECRET
-        sync: false
       - key: ADMIN_EMAILS
         sync: false
     disk:

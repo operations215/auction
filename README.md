@@ -89,9 +89,14 @@ The app stores its database (SQLite) and photos on disk in `data/` (or `DATA_DIR
 with a **persistent disk**: for example a small VPS, Render or Railway with a volume, or Fly.io with a volume.
 Serverless hosts like Vercel would need the database moved to Postgres and photos to object storage first.
 
-**Render:** `render.yaml` is a ready-made Blueprint. In Render, choose **New › Blueprint**, pick this repo,
-and fill in the prompted values (PayPal keys and `ADMIN_EMAILS`). It creates a web service with a 1 GB disk
-mounted at `/var/data` for the database and photos.
+**Render:** `render.yaml` is a ready-made Blueprint. Click the button (or in Render choose **New › Blueprint**
+and pick this repo). Render asks for `ADMIN_EMAILS` and creates a web service with a 1 GB disk mounted at
+`/var/data` for the database and photos.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/operations215/auction)
+
+When you have PayPal keys, add `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` in the service's **Environment**
+tab, and change `PAYPAL_ENV` to `live` when you're ready for real money. Render redeploys automatically.
 
 A live site starts empty (no demo data). Put your own email in `ADMIN_EMAILS`, then sign up with it to get
 the **Moderation** page.
