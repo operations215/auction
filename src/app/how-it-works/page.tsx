@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BadgeCheck, CalendarClock, Gavel, Receipt, ShieldCheck, Star, Truck, Wallet } from "lucide-react";
 import { bidIncrement, formatMoney } from "@/lib/auctions";
-import { FEE_DUE_DAYS, feeSettings, formatDay, formatRate, freeUntil } from "@/lib/fees";
+import { FEE_DUE_DAYS, featurePrice, feeSettings, formatDay, formatRate, freeUntil } from "@/lib/fees";
 
 export const metadata: Metadata = { title: "How it works" };
 
@@ -110,6 +110,14 @@ export default function HowItWorks() {
           </li>
           <li>PayPal&apos;s own processing fees on the payments you receive are separate, and go to PayPal.</li>
         </ul>
+
+        <h2 id="featured"><Star size={22} style={{ verticalAlign: -3 }} /> Featured lots</h2>
+        <p>
+          Want more eyes on a lot? Feature it ({featurePrice(fees)}) when you list it, or later from your seller
+          dashboard. Featured lots get a brass <b>Featured</b> badge, a place in the Featured row on the home page and
+          a spot at the top of matching searches until the auction ends.
+          {fees.featureCents > 0 && " The price is added to your seller fees, and isn't refunded if you cancel the listing."}
+        </p>
         <p>
           Ready? <Link href="/sell">List your first item</Link>, and read the <Link href="/rules">listing rules</Link> first.
         </p>

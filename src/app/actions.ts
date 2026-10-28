@@ -18,9 +18,11 @@ import { readPhotos, writePhoto } from "@/lib/uploads";
 import { demoPaymentsEnabled } from "@/lib/paypal";
 import {
   chargeSaleFee,
+  featureListing,
   FEE_DUE_DAYS,
   feeBalance,
   feeNotice,
+  MAX_FEATURE_CENTS,
   MAX_RATE_BP,
   openFeePayment,
   saveFeeSettings,
@@ -184,9 +186,22 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
     photos.files.forEach((p, i) => ins.run(listingId, writePhoto(p.buf, p.ext), i));
     return listingId;
   })();
+  const featured = fd.get("feature") ? featureListing(id, user.id).ok : false;
 
   refreshAll();
-  redirect(`/listings/${id}?flash=listed`);
+  redirect(`/listings/${id}?flash=${featured ? "listed-featured" : "listed"}`);
+}
+
+/** Features one of the seller's live lots. `next` is where to go back to (the listing or the dashboard). */
+export async function featureLot(fd: FormData) {
+  const id = Number(fd.get("listingId"));
+  const back = safeNext(str(fd, "next") || `/listings/${id}`);
+  const user = await requireUser(back);
+  const flash = (key: string) => `${back}${back.includes("?") ? "&" : "?"}flash=${key}`;
+  if (feeBalance(user.id).overdue) redirect(flash("fees-overdue"));
+  const r = featureListing(id, user.id);
+  refreshAll();
+  redirect(flash(r.ok ? "featured" : "feature-failed"));
 }
 
 export async function cancelListing(fd: FormData) {
@@ -386,10 +401,13 @@ export async function updateFeeSettings(fd: FormData) {
   const rate = str(fd, "rate").replace("%", "");
   const start = str(fd, "start");
   const rateBp = Math.round(Number(rate) * 100);
+  const featureCents = parseMoney(str(fd, "feature_price"));
   const startDay = new Date(`${start}T00:00:00Z`);
   const validStart = !start || (/^\d{4}-\d{2}-\d{2}$/.test(start) && !Number.isNaN(startDay.getTime()) && startDay.toISOString().startsWith(start));
-  if (rate === "" || !Number.isFinite(rateBp) || rateBp < 0 || rateBp > MAX_RATE_BP || !validStart) redirect("/admin?fees=invalid#fees");
-  saveFeeSettings({ rateBp, start });
+  const validFeature = featureCents != null && !Number.isNaN(featureCents) && featureCents <= MAX_FEATURE_CENTS;
+  if (rate === "" || !Number.isFinite(rateBp) || rateBp < 0 || rateBp > MAX_RATE_BP || !validStart || !validFeature)
+    redirect("/admin?fees=invalid#fees");
+  saveFeeSettings({ rateBp, start, featureCents: featureCents! });
   refreshAll();
   redirect("/admin?fees=saved#fees");
 }

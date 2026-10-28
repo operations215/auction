@@ -528,6 +528,10 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
 .lcard-seller b { color: var(--ink-2); font-weight: 600; }
 .lcard a.cover { position: absolute; inset: 0; z-index: 1; }
 .lcard .watch-form { position: absolute; top: 8px; right: 8px; z-index: 2; }
+.lcard.featured { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass), var(--shadow); }
+.lcard.featured:hover { box-shadow: 0 0 0 1px var(--brass), var(--shadow-lg); }
+.lcard-img .feat { position: absolute; bottom: 10px; right: 10px; box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.6); }
+.lcard-img .feat svg { fill: currentColor; }
 
 /* Lot tag: a manila shipping tag */
 .lot-tag {
@@ -610,6 +614,10 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
 .fee-pay { min-width: 260px; }
 .fee-note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius); background: var(--surface-2); color: var(--ink-2); font-size: 13.5px; margin: 0 0 16px; }
 .fee-note svg { flex: none; width: 17px; height: 17px; margin-top: 1px; color: var(--brass-lo); }
+.feature-offer { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px dashed var(--brass); border-radius: var(--radius); background: linear-gradient(180deg, rgba(227, 173, 69, 0.12), transparent); }
+.feature-offer > div { display: grid; gap: 2px; }
+.feature-offer .btn { flex: none; }
+.feature-check { padding: 14px 16px; border: 1px dashed var(--brass); border-radius: var(--radius); background: linear-gradient(180deg, rgba(227, 173, 69, 0.12), transparent); }
 .admin-fees { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
 @media (max-width: 900px) { .admin-fees { grid-template-columns: 1fr; } }
 
@@ -740,7 +748,8 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
 
 /* ---------- Sell ---------- */
 .sell-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
-@media (max-width: 960px) { .sell-layout { grid-template-columns: 1fr; } .sell-aside { order: -1; } }
+.sell-aside { position: sticky; top: 90px; }
+@media (max-width: 960px) { .sell-layout { grid-template-columns: 1fr; } .sell-aside { order: -1; position: static; } }
 .sell-step { padding: 24px; margin-bottom: 18px; }
 .sell-step h3 { display: flex; align-items: center; gap: 12px; font-size: 22px; text-transform: uppercase; letter-spacing: 0.02em; }
 .step-num { width: 32px; height: 32px; border-radius: 8px; background: var(--olive-700); color: var(--brass-hi); display: grid; place-items: center; font-family: var(--font-stencil); font-size: 17px; flex: none; }

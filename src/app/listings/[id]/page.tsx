@@ -14,6 +14,7 @@ import {
   PackageCheck,
   RotateCcw,
   ShieldCheck,
+  Star,
   Trophy,
   Truck,
   Wallet,
@@ -36,7 +37,8 @@ import {
   sellerStats,
   watchedIds,
 } from "@/lib/auctions";
-import { cancelListing, reportListing } from "@/app/actions";
+import { cancelListing, featureLot, reportListing } from "@/app/actions";
+import { featurePrice } from "@/lib/fees";
 import { BidBox } from "@/components/BidBox";
 import { Countdown } from "@/components/Countdown";
 import { Gallery } from "@/components/Gallery";
@@ -55,6 +57,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 const FLASH: Record<string, [string, string]> = {
   listed: ["alert-ok", "Your auction is live. Share the link and watch the bids roll in."],
+  "listed-featured": ["alert-ok", "Your auction is live and featured: it's on the home page and at the top of matching searches."],
+  featured: ["alert-ok", "Your lot is featured. It's on the home page and at the top of matching searches until it ends."],
+  "fees-overdue": ["alert-error", "Pay your overdue seller fees (My Quartermaster › Fees) before featuring a lot."],
+  "feature-failed": ["alert-error", "Only your own live auctions can be featured."],
   cancelled: ["alert-warn", "This listing was cancelled and is no longer visible in search."],
   reported: ["alert-ok", "Thanks. Our team reviews every report, usually within a day."],
   "report-invalid": ["alert-error", "Please choose a reason for the report."],
@@ -191,6 +197,7 @@ export default async function ListingPage({ params, searchParams }: Params) {
               {l.era && <span className="chip">{l.era}</span>}
               {l.origin_country && <span className="chip"><MapPin /> {l.origin_country}</span>}
               {l.authenticity_guarantee ? <span className="chip chip-go"><BadgeCheck /> Authenticity guaranteed</span> : null}
+              {active && l.featured_at ? <span className="chip chip-brass"><Star /> Featured</span> : null}
             </div>
             <h1 className="listing-title">{l.title}</h1>
             <div className="row small muted" style={{ gap: 14 }}>
@@ -238,6 +245,16 @@ export default async function ListingPage({ params, searchParams }: Params) {
                 {active && isSeller && (
                   <div className="stack" style={{ gap: 10 }}>
                     <div className="alert alert-info">This is your listing. You can&apos;t bid on it, but you can watch it here.</div>
+                    {!l.featured_at && (
+                      <form action={featureLot} className="feature-offer">
+                        <input type="hidden" name="listingId" value={l.id} />
+                        <div>
+                          <b><Star size={15} style={{ verticalAlign: -2 }} /> Feature this lot</b>
+                          <span className="small muted">Home page and top of matching searches until it ends. {featurePrice()}, added to your fees.</span>
+                        </div>
+                        <SubmitButton className="btn btn-brass btn-sm" pendingText="Featuring…">Feature it</SubmitButton>
+                      </form>
+                    )}
                     {l.bid_count === 0 && (
                       <form action={cancelListing}>
                         <input type="hidden" name="listingId" value={l.id} />
@@ -345,7 +362,7 @@ export default async function ListingPage({ params, searchParams }: Params) {
           </div>
         </section>
       )}
-      {flash === "listed" && (
+      {(flash === "listed" || flash === "listed-featured") && (
         <div className="flash alert alert-ok"><CircleCheck /> Listing published</div>
       )}
     </div>

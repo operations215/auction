@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS listings (
   tracking_number TEXT,
   received_at TEXT,
   ship_to TEXT,
+  featured_at TEXT, -- set when the seller pays to feature the lot
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS listings_status_ends ON listings(status, ends_at);
@@ -132,7 +133,8 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL
 );
 
--- Seller fees: one per paid sale, owed to the site until the seller pays it (or staff waive it).
+-- What sellers owe the site: a fee on each paid sale, and the price of featuring a lot.
+-- Each is owed until the seller pays it (or staff waive it).
 CREATE TABLE IF NOT EXISTS fee_payments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   seller_id INTEGER NOT NULL REFERENCES users(id),
@@ -147,15 +149,17 @@ CREATE INDEX IF NOT EXISTS fee_payments_order ON fee_payments(paypal_order_id);
 
 CREATE TABLE IF NOT EXISTS fees (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  listing_id INTEGER NOT NULL UNIQUE REFERENCES listings(id),
+  listing_id INTEGER NOT NULL REFERENCES listings(id),
   seller_id INTEGER NOT NULL REFERENCES users(id),
-  sale_cents INTEGER NOT NULL,
-  rate_bp INTEGER NOT NULL, -- basis points: 500 = 5%
+  kind TEXT NOT NULL DEFAULT 'sale', -- sale | feature
+  sale_cents INTEGER NOT NULL, -- 0 for feature fees
+  rate_bp INTEGER NOT NULL, -- basis points: 500 = 5%; 0 for feature fees
   amount_cents INTEGER NOT NULL,
   status TEXT NOT NULL DEFAULT 'owed', -- owed | paid | waived
   payment_id INTEGER REFERENCES fee_payments(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  settled_at TEXT
+  settled_at TEXT,
+  UNIQUE (listing_id, kind)
 );
 CREATE INDEX IF NOT EXISTS fees_seller ON fees(seller_id, status);
 `;
@@ -179,12 +183,19 @@ declare global {
   var __qmDb: Database.Database | undefined;
 }
 
+/** Columns added after the first release. CREATE TABLE IF NOT EXISTS doesn't add them to an existing database. */
+const ADDED_COLUMNS: [table: string, column: string, definition: string][] = [["listings", "featured_at", "featured_at TEXT"]];
+
 function open(): Database.Database {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   const db = new Database(path.join(DATA_DIR, "quartermaster.db"));
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.exec(SCHEMA);
+  for (const [table, column, definition] of ADDED_COLUMNS) {
+    const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    if (!columns.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+  }
   const insert = db.prepare(
     "INSERT OR IGNORE INTO categories (slug, name, description) VALUES (?, ?, ?)"
   );
@@ -196,6 +207,7 @@ function open(): Database.Database {
   // Default seller fee: 5%, starting 60 days after the site first runs so early sellers sell free.
   db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('fee_rate_bp', '500')").run();
   db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('fees_start', date('now', '+60 days'))").run();
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('feature_price_cents', '299')").run();
   return db;
 }
 

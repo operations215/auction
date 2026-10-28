@@ -46,15 +46,19 @@ items, bid against each other, pay the seller through PayPal, and rate each othe
 - Without PayPal keys, development builds show a clearly labelled "Simulate PayPal payment (demo)" button
   so the whole flow can be tried end to end
 
-**Seller fees (how the site makes money)**
+**Seller fees and featured lots (how the site makes money)**
 - When a buyer pays for an item, the seller owes the site a percentage of the winning bid (5% by default,
   shipping not included). Nothing is owed if the buyer never pays
-- Fees build up under **My Quartermaster › Fees**, and sellers pay them with PayPal into the site's own
+- Sellers can **feature** a lot ($2.99 by default) when they list it or later from their dashboard. Featured
+  lots get a brass badge, a place in the home page's Featured row and the hero spotlight, and the top four
+  spots in matching searches until the auction ends
+- Both build up under **My Quartermaster › Fees**, and sellers pay them with PayPal into the site's own
   PayPal account (the one the PayPal keys belong to)
-- Each fee is due within 30 days. A seller with an older unpaid fee can't list new items until they pay;
-  their live auctions carry on
-- Staff set the rate and the date fees start from on the **Moderation** page, see who owes what, and can
-  waive a fee. A new site starts with fees switched on 60 days after it first runs, so early sellers sell free
+- Each fee is due within 30 days. A seller with an older unpaid fee can't list or feature new items until
+  they pay; their live auctions carry on
+- Staff set the sale fee rate, the date sale fees start from and the feature price on the **Moderation**
+  page, see who owes what, and can waive a fee. A new site starts sale fees 60 days after it first runs, so
+  early sellers sell free; featuring is charged from day one
 
 ## Run it locally
 
@@ -129,7 +133,7 @@ src/
   lib/
     auctions.ts        bidding engine, increments, anti-sniping, auction closing, queries
     paypal.ts          PayPal Orders v2 client
-    fees.ts            seller fees: charging, balances, payments, settings
+    fees.ts            seller fees and featured lots: charging, balances, payments, settings
     db.ts              schema and connection
 scripts/
   seed.ts              demo data

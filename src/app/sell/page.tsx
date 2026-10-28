@@ -4,7 +4,7 @@ import { Wallet } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { CATEGORIES } from "@/lib/db";
 import { CONDITIONS, formatMoney } from "@/lib/auctions";
-import { FEE_DUE_DAYS, feeBalance, feePolicy } from "@/lib/fees";
+import { FEE_DUE_DAYS, feeBalance, featurePrice, feePolicy } from "@/lib/fees";
 import { SellForm } from "@/components/SellForm";
 
 export const metadata: Metadata = { title: "List an item" };
@@ -40,6 +40,7 @@ export default async function SellPage() {
           paypalEmail={user.paypal_email}
           location={user.location}
           feeNote={feePolicy()}
+          featurePrice={featurePrice()}
         />
       )}
     </div>

@@ -20,8 +20,8 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { cardsWhere, formatMoney, imageUrl, lotNumber, type ListingCard as Card } from "@/lib/auctions";
 import { demoPaymentsEnabled, paypalClientId, paypalConfigured } from "@/lib/paypal";
-import { dueDate, FEE_DUE_DAYS, feeBalance, feePolicy, feeSettings, formatRate, sellerFees } from "@/lib/fees";
-import { confirmReceived, leaveReview, logout, markShipped, simulateFeePayment, simulatePayment } from "@/app/actions";
+import { dueDate, FEE_DUE_DAYS, feeBalance, feePolicy, featurePrice, feeSettings, formatRate, sellerFees } from "@/lib/fees";
+import { confirmReceived, featureLot, leaveReview, logout, markShipped, simulateFeePayment, simulatePayment } from "@/app/actions";
 import { Countdown } from "@/components/Countdown";
 import { ListingCard } from "@/components/ListingCard";
 import { LocalTime } from "@/components/LocalTime";
@@ -47,6 +47,12 @@ const FLASH: Record<string, string> = {
   received: "Thanks for confirming delivery. Don't forget to rate the seller.",
   reviewed: "Thanks for your feedback. It helps every collector on Quartermaster.",
   fees: "Fees paid. Thanks for supporting Quartermaster.",
+  featured: "Your lot is featured. It's on the home page and at the top of matching searches until it ends.",
+};
+
+const FLASH_ERROR: Record<string, string> = {
+  "fees-overdue": "Pay your overdue seller fees before featuring a lot.",
+  "feature-failed": "Only your own live auctions can be featured.",
 };
 
 function Thumb({ l }: { l: Card }) {
@@ -76,7 +82,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const watcherCount = (id: number) => (d.prepare("SELECT COUNT(*) AS n FROM watchlist WHERE listing_id = ?").get(id) as { n: number }).n;
   const fees = sellerFees(uid);
   const balance = feeBalance(uid);
-  const feeByListing = new Map(fees.map((f) => [f.listing_id, f]));
+  const feeByListing = new Map(fees.filter((f) => f.kind === "sale").map((f) => [f.listing_id, f]));
   const showFees = fees.length > 0 || sellingLive.length + sellingDone.length > 0;
 
   const winningCount = bidding.filter((l) => l.high_bidder_id === uid).length;
@@ -107,6 +113,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       </div>
 
       {flash && FLASH[flash] && <div className="alert alert-ok" style={{ marginBottom: 18 }}><CircleCheck /> {FLASH[flash]}</div>}
+      {flash && FLASH_ERROR[flash] && <div className="alert alert-error" style={{ marginBottom: 18 }}><CircleAlert /> {FLASH_ERROR[flash]}</div>}
       {toPay > 0 && tab !== "won" && (
         <div className="alert alert-warn" style={{ marginBottom: 18 }}>
           <Wallet /> <span>You have {toPay} won {toPay === 1 ? "item" : "items"} waiting for payment. <Link className="link" href="/account?tab=won">Pay now</Link></span>
@@ -271,7 +278,15 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                         <span><Gavel size={13} style={{ verticalAlign: -2 }} /> {l.bid_count} {l.bid_count === 1 ? "bid" : "bids"}</span>
                         <span><Heart size={13} style={{ verticalAlign: -2 }} /> {watcherCount(l.id)} watching</span>
                         {l.reserve_price_cents != null && <span>Reserve {formatMoney(l.reserve_price_cents)}</span>}
+                        {l.featured_at && <span className="chip chip-brass"><Star /> Featured</span>}
                       </div>
+                      {!l.featured_at && (
+                        <form action={featureLot} style={{ marginTop: 8 }}>
+                          <input type="hidden" name="listingId" value={l.id} />
+                          <input type="hidden" name="next" value="/account?tab=selling" />
+                          <SubmitButton className="btn btn-sm" pendingText="Featuring…"><Star /> Feature it ({featurePrice()})</SubmitButton>
+                        </form>
+                      )}
                     </div>
                     <div className="right">
                       <div style={{ fontFamily: "var(--font-head)", fontSize: 24, fontWeight: 800 }}>{formatMoney(l.current_price_cents)}</div>
@@ -362,7 +377,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 ) : balance.overdue ? (
                   <b style={{ color: "var(--signal)" }}>Overdue. New listings are paused until you pay.</b>
                 ) : (
-                  <span className="muted">From {balance.count} {balance.count === 1 ? "sale" : "sales"}. Due by <b><LocalTime value={balance.dueBy!.toISOString()} withTime={false} /></b>.</span>
+                  <span className="muted">From {balance.count} {balance.count === 1 ? "charge" : "charges"}. Due by <b><LocalTime value={balance.dueBy!.toISOString()} withTime={false} /></b>.</span>
                 )}
               </div>
             </div>
@@ -388,15 +403,15 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           {fees.length ? (
             <div className="card table-wrap">
               <table className="table">
-                <thead><tr><th>Item</th><th className="num">Sold for</th><th className="num">Fee</th><th>Charged</th><th>Status</th></tr></thead>
+                <thead><tr><th>Item</th><th>For</th><th className="num">Fee</th><th>Charged</th><th>Status</th></tr></thead>
                 <tbody>
                   {fees.map((f) => {
                     const late = f.status === "owed" && dueDate(f.created_at).getTime() < Date.now();
                     return (
                       <tr key={f.id}>
                         <td><Link className="link mono small" href={`/listings/${f.listing_id}`}>{lotNumber(f.listing_id)}</Link><div>{f.title}</div></td>
-                        <td className="num">{formatMoney(f.sale_cents)}</td>
-                        <td className="num"><b>{formatMoney(f.amount_cents)}</b><div className="small muted">{formatRate(f.rate_bp)}</div></td>
+                        <td className="small">{f.kind === "feature" ? "Featuring the lot" : <>Sale at {formatMoney(f.sale_cents)}</>}</td>
+                        <td className="num"><b>{formatMoney(f.amount_cents)}</b>{f.kind === "sale" && <div className="small muted">{formatRate(f.rate_bp)}</div>}</td>
                         <td className="small"><LocalTime value={f.created_at} withTime={false} /></td>
                         <td>
                           <span className={`chip ${late ? "chip-signal" : f.status === "owed" ? "chip-warn" : f.status === "paid" ? "chip-go" : ""}`}>
@@ -410,7 +425,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               </table>
             </div>
           ) : (
-            <div className="empty"><Receipt /><h3>No fees yet</h3><p>When one of your items sells and the buyer pays, its fee shows up here.</p></div>
+            <div className="empty"><Receipt /><h3>No fees yet</h3><p>When one of your items sells and the buyer pays, or you feature a lot, its fee shows up here.</p></div>
           )}
         </div>
       )}

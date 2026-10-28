@@ -8,7 +8,7 @@ import path from "node:path";
 import bcrypt from "bcryptjs";
 import { DATA_DIR, UPLOAD_DIR, db, parseDbDate, systemUserId, toDbDate } from "../src/lib/db";
 import { finalizeEndedAuctions, placeBid } from "../src/lib/auctions";
-import { chargeSaleFee, saveFeeSettings } from "../src/lib/fees";
+import { chargeSaleFee, featureListing, saveFeeSettings } from "../src/lib/fees";
 import { art, type ArtOpts, type Kind } from "./art";
 
 const PASSWORD = "surplus123";
@@ -465,9 +465,21 @@ for (const { id, l } of ended) {
 
 /* ------------------------------------------------------------------ seller fees */
 
-// In the demo, the 5% fee was already on when these items sold. Sellers have paid the fees from
-// sales more than ten days old; the rest are still owed.
-saveFeeSettings({ rateBp: 500, start: "" });
+// In the demo, the 5% fee was already on when these items sold, and a few sellers featured a lot when
+// they listed it. Sellers have paid the fees from more than ten days ago; the rest are still owed.
+saveFeeSettings({ rateBp: 500, start: "", featureCents: 299 });
+for (const title of [
+  "British Mk II Brodie Helmet, 1940 Dated, Original Paint",
+  "Bronze Star Medal in Coffin Case with Ribbon Bar and Lapel Pin",
+  "Bundeswehr Hensoldt 8x30 Binoculars with Case",
+  "USMC KA-BAR Fighting Knife with Leather Sheath, 1944",
+  "ERDL Pattern Jungle Jacket, Small-Long, Green Dominant",
+]) {
+  const l = d.prepare("SELECT id, seller_id, created_at FROM listings WHERE title = ?").get(title) as { id: number; seller_id: number; created_at: string };
+  featureListing(l.id, l.seller_id);
+  d.prepare("UPDATE listings SET featured_at = ? WHERE id = ?").run(l.created_at, l.id);
+  d.prepare("UPDATE fees SET created_at = ? WHERE listing_id = ? AND kind = 'feature'").run(l.created_at, l.id);
+}
 type Sale = { id: number; seller_id: number; current_price_cents: number; ends_at: string; paid_at: string };
 for (const sale of d.prepare("SELECT id, seller_id, current_price_cents, ends_at, paid_at FROM listings WHERE paid_at IS NOT NULL ORDER BY id").all() as Sale[])
   if (chargeSaleFee(sale)) d.prepare("UPDATE fees SET created_at = ? WHERE listing_id = ?").run(sale.paid_at, sale.id);
@@ -524,6 +536,6 @@ d.prepare("INSERT INTO reports (listing_id, reporter_id, reason, details) VALUES
 );
 
 const count = (sql: string) => (d.prepare(sql).get() as { n: number }).n;
-console.log(`Seeded ${count("SELECT COUNT(*) AS n FROM users") - 1} members, ${count("SELECT COUNT(*) AS n FROM listings")} listings (${count("SELECT COUNT(*) AS n FROM listings WHERE status = 'active'")} live), ${count("SELECT COUNT(*) AS n FROM bids")} bids, ${count("SELECT COUNT(*) AS n FROM reviews")} reviews, ${count("SELECT COUNT(*) AS n FROM fees")} seller fees (${count("SELECT COUNT(*) AS n FROM fees WHERE status = 'owed'")} owed).`);
+console.log(`Seeded ${count("SELECT COUNT(*) AS n FROM users") - 1} members, ${count("SELECT COUNT(*) AS n FROM listings")} listings (${count("SELECT COUNT(*) AS n FROM listings WHERE status = 'active'")} live), ${count("SELECT COUNT(*) AS n FROM bids")} bids, ${count("SELECT COUNT(*) AS n FROM reviews")} reviews, ${count("SELECT COUNT(*) AS n FROM fees")} seller fees (${count("SELECT COUNT(*) AS n FROM fees WHERE status = 'owed'")} owed), ${count("SELECT COUNT(*) AS n FROM listings WHERE featured_at IS NOT NULL")} featured lots.`);
 console.log(`System notices from user #${systemUserId()}.`);
 console.log(`Log in as demo@quartermaster.test (buyer and seller) or staff@quartermaster.test (moderator). Password: ${PASSWORD}`);

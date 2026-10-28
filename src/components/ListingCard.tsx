@@ -1,17 +1,19 @@
 import Link from "next/link";
-import { Gavel } from "lucide-react";
+import { Gavel, Star } from "lucide-react";
 import { formatMoney, imageUrl, lotNumber, type ListingCard as Card } from "@/lib/auctions";
 import { Countdown } from "./Countdown";
 import { WatchButton } from "./WatchButton";
 
 export function ListingCard({ l, watched }: { l: Card; watched?: boolean }) {
   const ended = l.status !== "active";
+  const featured = !ended && !!l.featured_at;
   return (
-    <article className="lcard">
+    <article className={`lcard${featured ? " featured" : ""}`}>
       <div className="lcard-img">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageUrl(l.image)} alt="" loading="lazy" />
         <span className="lot lot-tag">{lotNumber(l.id)}</span>
+        {featured && <span className="feat chip chip-brass"><Star /> Featured</span>}
         <span className="tl">
           {ended ? (
             <span className="chip chip-dark">{l.winner_id ? "Sold" : "Ended"}</span>

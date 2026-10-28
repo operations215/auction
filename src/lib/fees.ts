@@ -3,24 +3,27 @@ import { formatMoney, type ListingRow } from "./auctions";
 
 /**
  * Seller fees. When a buyer pays for an item, the seller owes the site a percentage of the winning bid
- * (shipping isn't included). Fees build up on the seller's account and they pay them with PayPal into the
- * site's own PayPal account. A seller whose oldest unpaid fee is more than FEE_DUE_DAYS old can't list
- * new items until they pay.
+ * (shipping isn't included). Sellers can also pay a flat price to feature a lot. Both build up on the
+ * seller's account and they pay them with PayPal into the site's own PayPal account. A seller whose oldest
+ * unpaid fee is more than FEE_DUE_DAYS old can't list or feature new items until they pay.
  *
- * Staff set the rate and the date fees start from on the moderation page. Each fee keeps the rate it was
- * charged at, so changing the rate only affects sales paid afterwards.
+ * Staff set the rate, the date sale fees start from and the feature price on the moderation page. Each fee
+ * keeps the amount it was charged at, so changes only affect later sales and features.
  */
 
 export const FEE_DUE_DAYS = 30;
 export const MAX_RATE_BP = 3000;
+export const MAX_FEATURE_CENTS = 10_000;
 
-export type FeeSettings = { rateBp: number; start: string }; // start: "YYYY-MM-DD" (UTC) or "" for now
+/** start: "YYYY-MM-DD" (UTC), or "" to charge sale fees from now. */
+export type FeeSettings = { rateBp: number; start: string; featureCents: number };
 
 export type FeeLine = {
   id: number;
   listing_id: number;
   seller_id: number;
   title: string;
+  kind: "sale" | "feature";
   sale_cents: number;
   rate_bp: number;
   amount_cents: number;
@@ -41,16 +44,26 @@ export type FeePayment = {
 };
 
 export function feeSettings(): FeeSettings {
-  const rows = db().prepare("SELECT key, value FROM settings WHERE key IN ('fee_rate_bp', 'fees_start')").all() as { key: string; value: string }[];
+  const rows = db()
+    .prepare("SELECT key, value FROM settings WHERE key IN ('fee_rate_bp', 'fees_start', 'feature_price_cents')")
+    .all() as { key: string; value: string }[];
   const get = (k: string) => rows.find((r) => r.key === k)?.value ?? "";
-  const rate = Number.parseInt(get("fee_rate_bp"), 10);
-  return { rateBp: Number.isFinite(rate) ? Math.min(Math.max(rate, 0), MAX_RATE_BP) : 0, start: get("fees_start") };
+  const clamp = (v: string, max: number) => {
+    const n = Number.parseInt(v, 10);
+    return Number.isFinite(n) ? Math.min(Math.max(n, 0), max) : 0;
+  };
+  return {
+    rateBp: clamp(get("fee_rate_bp"), MAX_RATE_BP),
+    start: get("fees_start"),
+    featureCents: clamp(get("feature_price_cents"), MAX_FEATURE_CENTS),
+  };
 }
 
 export function saveFeeSettings(s: FeeSettings) {
   const put = db().prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
   put.run("fee_rate_bp", String(s.rateBp));
   put.run("fees_start", s.start);
+  put.run("feature_price_cents", String(s.featureCents));
 }
 
 /** 500 -> "5%", 650 -> "6.5%" */
@@ -99,9 +112,39 @@ export function chargeSaleFee(l: Pick<ListingRow, "id" | "seller_id" | "current_
   const amount = feeAmount(l.current_price_cents, s.rateBp);
   if (amount <= 0) return null;
   const r = db()
-    .prepare("INSERT OR IGNORE INTO fees (listing_id, seller_id, sale_cents, rate_bp, amount_cents) VALUES (?, ?, ?, ?, ?)")
+    .prepare("INSERT OR IGNORE INTO fees (listing_id, seller_id, kind, sale_cents, rate_bp, amount_cents) VALUES (?, ?, 'sale', ?, ?, ?)")
     .run(l.id, l.seller_id, l.current_price_cents, s.rateBp, amount);
   return r.changes ? { amountCents: amount, rateBp: s.rateBp } : null;
+}
+
+/** What featuring a lot costs, in a few words: "$2.99" or "free right now". */
+export function featurePrice(s = feeSettings()) {
+  return s.featureCents > 0 ? formatMoney(s.featureCents) : "free right now";
+}
+
+/**
+ * Features a live lot: it shows in the home page's Featured row and at the top of matching searches until
+ * the auction ends. The feature price is added to the seller's fees. Featuring the same lot twice is a no-op.
+ */
+export function featureListing(listingId: number, sellerId: number): { ok: true; amountCents: number } | { ok: false; error: string } {
+  const d = db();
+  return d.transaction(() => {
+    const l = d.prepare("SELECT seller_id, status, featured_at FROM listings WHERE id = ?").get(listingId) as
+      | Pick<ListingRow, "seller_id" | "status" | "featured_at">
+      | undefined;
+    if (!l || l.seller_id !== sellerId) return { ok: false as const, error: "You can only feature your own lots." };
+    if (l.status !== "active") return { ok: false as const, error: "Only live auctions can be featured." };
+    if (l.featured_at) return { ok: true as const, amountCents: 0 };
+    const price = feeSettings().featureCents;
+    d.prepare("UPDATE listings SET featured_at = datetime('now') WHERE id = ?").run(listingId);
+    if (price > 0)
+      d.prepare("INSERT OR IGNORE INTO fees (listing_id, seller_id, kind, sale_cents, rate_bp, amount_cents) VALUES (?, ?, 'feature', 0, 0, ?)").run(
+        listingId,
+        sellerId,
+        price
+      );
+    return { ok: true as const, amountCents: price };
+  })();
 }
 
 /** The sentence added to the seller's "payment received" notice when a fee was charged. */

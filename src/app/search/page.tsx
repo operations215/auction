@@ -29,7 +29,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const sold = sp.status === "sold";
   const min = parseMoney(sp.min ?? null);
   const max = parseMoney(sp.max ?? null);
-  const results = searchListings({
+  const opts: SearchOpts = {
     q: sp.q,
     category: sp.category || undefined,
     sort,
@@ -40,7 +40,11 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     endingHours: sp.ending === "24" ? 24 : sp.ending === "1" ? 1 : undefined,
     noReserve: sp.noreserve === "1",
     limit: 96,
-  });
+  };
+  // Up to four featured lots that match go first, then everything else in the chosen order.
+  const pinned = sold ? [] : searchListings({ ...opts, featuredOnly: true, sort: "ending", limit: 4 });
+  const pinnedIds = new Set(pinned.map((l) => l.id));
+  const results = [...pinned, ...searchListings(opts).filter((l) => !pinnedIds.has(l.id))];
   const cats = categoryCounts();
   const cat = cats.find((c) => c.slug === sp.category);
 
@@ -112,7 +116,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         <section>
           <div className="results-bar">
             <div>
-              <div className="eyebrow">{results.length} {results.length === 1 ? "lot" : "lots"}{results.length === 96 ? "+" : ""}</div>
+              <div className="eyebrow">{results.length} {results.length === 1 ? "lot" : "lots"}{results.length >= 96 ? "+" : ""}</div>
               <h1>{heading}</h1>
             </div>
             <form action="/search" className="row" style={{ gap: 8 }}>

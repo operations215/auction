@@ -27,8 +27,10 @@ export default async function Home() {
   const ending = searchListings({ sort: "ending", limit: 8 });
   const hot = searchListings({ sort: "bids", limit: 4 });
   const fresh = searchListings({ sort: "newest", limit: 8 });
+  const featuredLots = searchListings({ featuredOnly: true, sort: "ending", limit: 8 });
   const cats = categoryCounts();
-  const featured = hot[0];
+  // The hero spotlights a featured lot (a different one on each visit), or else the most-bid lot.
+  const spotlight = featuredLots.length ? featuredLots[Math.floor(Math.random() * featuredLots.length)] : hot[0];
   const w = (id: number) => (user ? watched.has(id) : undefined);
 
   return (
@@ -84,13 +86,13 @@ export default async function Home() {
               </div>
             )}
           </div>
-          {featured ? (
+          {spotlight ? (
             <div className="hero-feature">
               <span className="feature-tag chip chip-brass" style={{ height: 30, padding: "0 14px", fontSize: 13 }}>
-                <Flame /> Most-bid lot right now
+                {spotlight.featured_at ? <><Star /> Featured lot</> : <><Flame /> Most-bid lot right now</>}
               </span>
               <div className="card">
-                <ListingCard l={featured} />
+                <ListingCard l={spotlight} />
               </div>
             </div>
           ) : (
@@ -143,6 +145,21 @@ export default async function Home() {
       </section>
 
       <div className="wrap">
+        {featuredLots.length > 0 && (
+          <section className="section">
+            <div className="section-head">
+              <div>
+                <div className="eyebrow"><Star size={12} style={{ verticalAlign: -1 }} /> Front of the shelf</div>
+                <h2>Featured lots</h2>
+              </div>
+              <Link href="/how-it-works#featured">Feature your lot <ArrowRight size={15} /></Link>
+            </div>
+            <div className="grid-cards">
+              {featuredLots.map((l) => <ListingCard key={l.id} l={l} watched={w(l.id)} />)}
+            </div>
+          </section>
+        )}
+
         {ending.length > 0 && (
           <section className="section">
             <div className="section-head">

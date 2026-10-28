@@ -17,7 +17,7 @@ const FEE_STATUS = { owed: "Owed", paid: "Paid", waived: "Waived" } as const;
 const FEE_FLASH: Record<string, [ok: boolean, text: string]> = {
   saved: [true, "Fee settings saved. They apply to sales paid from now on."],
   waived: [true, "Fee waived. The seller has been told."],
-  invalid: [false, "Enter a rate between 0 and 30%, and a valid start date (or leave the date blank)."],
+  invalid: [false, "Enter a rate between 0 and 30%, a feature price up to $100, and a valid start date (or leave the date blank)."],
 };
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ fees?: string }> }) {
@@ -37,6 +37,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const totals = feeTotals();
   const balances = feeBalances();
   const recent = recentFees(40);
+  const featuredLive = (db().prepare("SELECT COUNT(*) AS n FROM listings WHERE status = 'active' AND featured_at IS NOT NULL").get() as { n: number }).n;
   const flash = feeFlash ? FEE_FLASH[feeFlash] : undefined;
 
   return (
@@ -107,6 +108,21 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 <span className="hint">Sales that end before this date are free. Leave blank to charge from today.</span>
               </div>
             </div>
+            <div className="grid-2">
+              <div className="field">
+                <label htmlFor="feature_price">Price to feature a lot</label>
+                <div className="input-money">
+                  <input id="feature_price" name="feature_price" inputMode="decimal" defaultValue={(fs.featureCents / 100).toFixed(2)} className="input" required />
+                </div>
+                <span className="hint">Charged once per lot, from day one. Set 0 to let sellers feature for free.</span>
+              </div>
+              <div className="field">
+                <span className="label">Featured right now</span>
+                <div style={{ fontFamily: "var(--font-head)", fontSize: 28, fontWeight: 800, lineHeight: 1.4 }}>
+                  {featuredLive} {featuredLive === 1 ? "lot" : "lots"}
+                </div>
+              </div>
+            </div>
             <p className="small muted" style={{ margin: 0 }}>
               Fees already charged keep their rate. Sellers pay into the PayPal account your PayPal keys belong to.
             </p>
@@ -124,7 +140,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                   const late = due.getTime() < Date.now();
                   return (
                     <tr key={b.seller_id}>
-                      <td><Link className="link" href={`/users/${b.seller_id}`}>{b.seller}</Link><div className="small muted">{b.n} {b.n === 1 ? "sale" : "sales"}</div></td>
+                      <td><Link className="link" href={`/users/${b.seller_id}`}>{b.seller}</Link><div className="small muted">{b.n} {b.n === 1 ? "charge" : "charges"}</div></td>
                       <td className="num"><b>{formatMoney(b.owed)}</b></td>
                       <td className="small">
                         {late ? <span className="chip chip-signal">Overdue</span> : <LocalTime value={due.toISOString()} withTime={false} />}
@@ -141,15 +157,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <div className="card table-wrap" style={{ marginTop: 18 }}>
           <h3 style={{ margin: 0, padding: "18px 16px 4px" }}>Recent fees</h3>
           <table className="table">
-            <thead><tr><th>Item</th><th>Seller</th><th className="num">Sold for</th><th className="num">Fee</th><th>Charged</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Item</th><th>Seller</th><th>For</th><th className="num">Fee</th><th>Charged</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {recent.length === 0 && <tr><td colSpan={7} className="muted">No fees charged yet. They appear here as buyers pay for items.</td></tr>}
               {recent.map((f) => (
                 <tr key={f.id}>
                   <td><Link className="link mono small" href={`/listings/${f.listing_id}`}>{lotNumber(f.listing_id)}</Link><div className="small">{f.title}</div></td>
                   <td>{f.seller}</td>
-                  <td className="num">{formatMoney(f.sale_cents)}</td>
-                  <td className="num"><b>{formatMoney(f.amount_cents)}</b><div className="small muted">{formatRate(f.rate_bp)}</div></td>
+                  <td className="small">{f.kind === "feature" ? "Featured lot" : <>Sale at {formatMoney(f.sale_cents)}</>}</td>
+                  <td className="num"><b>{formatMoney(f.amount_cents)}</b>{f.kind === "sale" && <div className="small muted">{formatRate(f.rate_bp)}</div>}</td>
                   <td className="small"><LocalTime value={f.created_at} withTime={false} /></td>
                   <td><span className={`chip ${f.status === "owed" ? "chip-warn" : f.status === "paid" ? "chip-go" : ""}`}>{FEE_STATUS[f.status]}</span></td>
                   <td>

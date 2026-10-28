@@ -32,6 +32,7 @@ export function SellForm(props: {
   paypalEmail: string;
   location: string;
   feeNote: string;
+  featurePrice: string;
 }) {
   const [state, action] = useActionState<FormState, FormData>(createListing, undefined);
   const [pending, start] = useTransition();
@@ -41,6 +42,7 @@ export function SellForm(props: {
   const [price, setPrice] = useState("");
   const [shipping, setShipping] = useState("");
   const [days, setDays] = useState("7");
+  const [featured, setFeatured] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const f = state?.fields ?? {};
 
@@ -220,6 +222,15 @@ export function SellForm(props: {
               <li>Reproductions passed off as originals</li>
             </ul>
           </div>
+          <label className="check feature-check" style={{ marginBottom: 14 }}>
+            <input type="checkbox" name="feature" checked={featured} onChange={(e) => setFeatured(e.target.checked)} />
+            <span>
+              <b><Star size={15} style={{ verticalAlign: -2 }} /> Feature this lot ({props.featurePrice})</b>
+              <br />
+              It goes in the Featured row on the home page and to the top of matching searches until the auction ends.
+              The price is added to your seller fees.
+            </span>
+          </label>
           <label className="check" style={{ marginBottom: 18 }}>
             <input type="checkbox" name="confirm_rules" required />
             <span>This item follows the <a className="link" href="/rules" target="_blank">listing rules</a>, I own it, and my photos and description are accurate.</span>
@@ -230,9 +241,9 @@ export function SellForm(props: {
         </section>
       </div>
 
-      <aside className="sell-aside stack" style={{ position: "sticky", top: 90, gap: 16 }}>
+      <aside className="sell-aside stack" style={{ gap: 16 }}>
         <div className="eyebrow">Live preview</div>
-        <article className="lcard" style={{ pointerEvents: "none" }}>
+        <article className={`lcard${featured ? " featured" : ""}`} style={{ pointerEvents: "none" }}>
           <div className="lcard-img">
             {photos[0] ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -242,6 +253,7 @@ export function SellForm(props: {
               <img src="/placeholder.svg" alt="" />
             )}
             <span className="lot lot-tag">LOT NEW</span>
+            {featured && <span className="feat chip chip-brass"><Star /> Featured</span>}
             <span className="tl"><span className="chip chip-dark"><Timer /> {days}d 0h</span></span>
           </div>
           <div className="lcard-body">

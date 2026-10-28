@@ -36,6 +36,7 @@ export type ListingRow = {
   tracking_number: string | null;
   received_at: string | null;
   ship_to: string | null;
+  featured_at: string | null;
 };
 
 export type ListingCard = ListingRow & {
@@ -230,6 +231,7 @@ export type SearchOpts = {
   maxCents?: number;
   endingHours?: number;
   noReserve?: boolean;
+  featuredOnly?: boolean;
   limit?: number;
 };
 
@@ -267,6 +269,7 @@ export function searchListings(opts: SearchOpts = {}): ListingCard[] {
     args.push(`+${Math.floor(opts.endingHours)} hours`);
   }
   if (opts.noReserve) where.push("l.reserve_price_cents IS NULL");
+  if (opts.featuredOnly) where.push("l.featured_at IS NOT NULL");
   if (opts.sellerId) {
     where.push("l.seller_id = ?");
     args.push(opts.sellerId);
