@@ -22,7 +22,7 @@ const stencil = Saira_Stencil_One({ subsets: ["latin"], weight: "400", variable:
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "Quartermaster: Militaria & Army Surplus Auctions", template: "%s · Quartermaster" },
+  title: { default: "MusterBid: Militaria & Army Surplus Auctions", template: "%s · MusterBid" },
   description:
     "Buy and sell genuine military surplus and militaria at auction. Rated sellers, proxy bidding, anti-sniping protection and PayPal checkout.",
 };
@@ -69,10 +69,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         <header className="header" style={{ backgroundImage: HEADER_CAMO }}>
           <div className="wrap">
-            <Link href="/" className="logo" aria-label="Quartermaster home">
+            <Link href="/" className="logo" aria-label="MusterBid home">
               <LogoMark />
               <span>
-                <span className="logo-word">QUARTERMASTER</span>
+                <span className="logo-word">MUSTERBID</span>
                 <span className="logo-sub">MILITARIA · SURPLUS · AUCTIONS</span>
               </span>
             </Link>
@@ -95,7 +95,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <MessagesSquare /> <span className="label-text">Messages</span>
                     {unread > 0 && <span className="badge">{unread > 99 ? "99+" : unread}</span>}
                   </Link>
-                  <Link href="/account" title="My Quartermaster">
+                  <Link href="/account" title="My MusterBid">
                     <Gavel /> <span className="label-text">My bids</span>
                   </Link>
                   <Link href={`/users/${user.id}`} title={`${user.display_name}: my profile`} aria-label="My profile">
@@ -130,7 +130,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div>
                 <Link href="/" className="logo" style={{ marginBottom: 14 }}>
                   <LogoMark />
-                  <span className="logo-word" style={{ fontSize: 21 }}>QUARTERMASTER</span>
+                  <span className="logo-word" style={{ fontSize: 21 }}>MUSTERBID</span>
                 </Link>
                 <p style={{ maxWidth: 320 }}>
                   The collector&apos;s marketplace for genuine military surplus and militaria. Every seller is rated,
@@ -167,7 +167,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </div>
             <div className="footer-bottom">
-              <span>© {new Date().getFullYear()} Quartermaster. Payments processed by PayPal.</span>
+              <span>© {new Date().getFullYear()} MusterBid. Payments processed by PayPal.</span>
               <span className="mono">EST. 2026 · SERVING COLLECTORS WORLDWIDE</span>
             </div>
           </div>

@@ -45,7 +45,7 @@ export default async function ThreadPage({ params, searchParams }: Params) {
             </div>
           </div>
           <div className="thread-body">
-            <div className="bubble system"><ShieldAlert size={14} style={{ verticalAlign: -2 }} /> Stay safe: pay only through the PayPal button on your order page. Quartermaster staff will never ask for your password.</div>
+            <div className="bubble system"><ShieldAlert size={14} style={{ verticalAlign: -2 }} /> Stay safe: pay only through the PayPal button on your order page. MusterBid staff will never ask for your password.</div>
             {msgs.length === 0 && <p className="muted small" style={{ textAlign: "center" }}>Say hello to {other.display_name}.</p>}
             {msgs.map((m) => (
               <div key={m.id} className={`bubble ${m.sender_id === user.id ? "me" : "them"}`}>

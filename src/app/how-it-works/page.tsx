@@ -17,7 +17,7 @@ export default function HowItWorks() {
       <div className="page-head">
         <div>
           <div className="eyebrow">Field manual</div>
-          <h1>How Quartermaster works</h1>
+          <h1>How MusterBid works</h1>
           <p className="muted" style={{ margin: 0, maxWidth: 640 }}>Everything you need to buy and sell with confidence, from your first bid to leaving feedback.</p>
         </div>
       </div>
@@ -32,7 +32,7 @@ export default function HowItWorks() {
       <div className="prose">
         <h2 id="bidding"><Gavel size={22} style={{ verticalAlign: -3 }} /> Bidding, explained</h2>
         <p>
-          Quartermaster uses <b>proxy bidding</b>, the same system collectors know from the big auction sites. You tell
+          MusterBid uses <b>proxy bidding</b>, the same system collectors know from the big auction sites. You tell
           us the most you&apos;re willing to pay. We keep that number secret and bid for you only as much as it takes to
           stay in front, one increment at a time.
         </p>
@@ -82,7 +82,7 @@ export default function HowItWorks() {
           feedback history. Sellers with at least 3 ratings and 95% positive earn the <b>Top-rated</b> badge.
         </p>
 
-        <h2 id="selling">Selling on Quartermaster</h2>
+        <h2 id="selling">Selling on MusterBid</h2>
         <ul>
           <li>Listing is free. Add up to 10 photos, a detailed description, markings and provenance.</li>
           <li>Choose a starting bid, an optional reserve, shipping cost and an auction length of 1 to 10 days.</li>
@@ -104,7 +104,7 @@ export default function HowItWorks() {
           )}
           {fees.rateBp > 0 && until && <li><b>Launch offer:</b> no seller fees on auctions that end before {formatDay(until)}.</li>}
           <li>
-            Fees add up under <Link href="/account?tab=fees">My Quartermaster › Fees</Link>. Pay them with PayPal whenever
+            Fees add up under <Link href="/account?tab=fees">My MusterBid › Fees</Link>. Pay them with PayPal whenever
             you like, as long as each one is paid within {FEE_DUE_DAYS} days. If any fee is older than that, you can&apos;t
             list new items until it&apos;s paid. Your live auctions carry on as normal.
           </li>

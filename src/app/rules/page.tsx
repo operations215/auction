@@ -33,7 +33,7 @@ export default function RulesPage() {
           <div className="eyebrow">Standing orders</div>
           <h1>Listing rules</h1>
           <p className="muted" style={{ margin: 0, maxWidth: 680 }}>
-            Quartermaster is a marketplace for collectors of military surplus and militaria. These rules keep it legal,
+            MusterBid is a marketplace for collectors of military surplus and militaria. These rules keep it legal,
             safe and trustworthy for everyone. Breaking them can get listings removed and accounts closed.
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function RulesPage() {
         <ul>
           <li>A winning bid is a commitment to buy. Pay within 3 days of the auction ending.</li>
           <li>Don&apos;t bid on your own items or ask friends to raise the price (shill bidding). It leads to an immediate ban.</li>
-          <li>Keep payment on Quartermaster. Offers to pay or sell &quot;off site&quot; are a common scam.</li>
+          <li>Keep payment on MusterBid. Offers to pay or sell &quot;off site&quot; are a common scam.</li>
         </ul>
 
         <h2 id="reporting"><Flag size={20} style={{ verticalAlign: -3 }} /> Reporting a listing</h2>

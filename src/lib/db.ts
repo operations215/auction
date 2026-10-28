@@ -188,6 +188,7 @@ const ADDED_COLUMNS: [table: string, column: string, definition: string][] = [["
 
 function open(): Database.Database {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  // Kept from the site's old name so existing deployments keep their data.
   const db = new Database(path.join(DATA_DIR, "quartermaster.db"));
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
@@ -202,8 +203,10 @@ function open(): Database.Database {
   for (const c of CATEGORIES) insert.run(c.slug, c.name, c.description);
   // The account automated notices are sent from. It has no usable password, so nobody can log in as it.
   db.prepare(
-    "INSERT OR IGNORE INTO users (email, password_hash, display_name, bio) VALUES (?, '!', 'Quartermaster', ?)"
+    "INSERT OR IGNORE INTO users (email, password_hash, display_name, bio) VALUES (?, '!', 'MusterBid', ?)"
   ).run(SYSTEM_EMAIL, "Automated notices about your bids, sales and orders.");
+  // The site was renamed from Quartermaster to MusterBid; rename the notices account in older databases too.
+  db.prepare("UPDATE users SET display_name = 'MusterBid' WHERE email = ? AND display_name = 'Quartermaster'").run(SYSTEM_EMAIL);
   // Default seller fee: 5%, starting 60 days after the site first runs so early sellers sell free.
   db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('fee_rate_bp', '500')").run();
   db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('fees_start', date('now', '+60 days'))").run();
@@ -211,6 +214,7 @@ function open(): Database.Database {
   return db;
 }
 
+// Kept from the site's old name: existing databases look the notices account up by this address.
 export const SYSTEM_EMAIL = "notices@quartermaster.invalid";
 
 let systemId: number | undefined;

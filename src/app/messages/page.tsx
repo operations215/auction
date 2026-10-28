@@ -17,7 +17,7 @@ export default async function MessagesPage() {
         <div className="thread" style={{ display: "grid", placeItems: "center", color: "var(--ink-3)", padding: 40, textAlign: "center" }}>
           <div>
             <MessagesSquare size={42} style={{ margin: "0 auto 10px", color: "var(--khaki)" }} />
-            <p>Choose a conversation. Keep all deals on Quartermaster: never pay outside the PayPal button on your order.</p>
+            <p>Choose a conversation. Keep all deals on MusterBid: never pay outside the PayPal button on your order.</p>
           </div>
         </div>
       </div>

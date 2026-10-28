@@ -114,11 +114,11 @@ export async function createFeeOrder(paymentId: number, amountCents: number, cou
       {
         reference_id: feeCustomId(paymentId),
         custom_id: feeCustomId(paymentId),
-        description: `Quartermaster seller fees (${count} ${count === 1 ? "sale" : "sales"})`,
+        description: `MusterBid seller fees (${count} ${count === 1 ? "sale" : "sales"})`,
         amount: money(amountCents),
       },
     ],
-    application_context: { brand_name: "Quartermaster", shipping_preference: "NO_SHIPPING" },
+    application_context: { brand_name: "MusterBid", shipping_preference: "NO_SHIPPING" },
   });
   return order.id;
 }

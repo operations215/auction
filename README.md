@@ -1,4 +1,4 @@
-# Quartermaster
+# MusterBid
 
 An eBay-style auction marketplace for army surplus and militaria. Members list their own
 items, bid against each other, pay the seller through PayPal, and rate each other afterwards.
@@ -36,7 +36,7 @@ items, bid against each other, pay the seller through PayPal, and rate each othe
 - Usernames that impersonate staff are blocked; login is throttled after 5 failed attempts
 - Uploaded photos are checked by file content (not just extension) and served with a locked-down
   Content-Security-Policy
-- Buyer-seller messaging with safety tips, plus automated notices from a "Quartermaster" system account
+- Buyer-seller messaging with safety tips, plus automated notices from a "MusterBid" system account
 
 **Payments (PayPal)**
 - Winners pay with PayPal Smart Buttons on their "Won" tab. The order is created and captured on the server,
@@ -52,7 +52,7 @@ items, bid against each other, pay the seller through PayPal, and rate each othe
 - Sellers can **feature** a lot ($2.99 by default) when they list it or later from their dashboard. Featured
   lots get a brass badge, a place in the home page's Featured row and the hero spotlight, and the top four
   spots in matching searches until the auction ends
-- Both build up under **My Quartermaster › Fees**, and sellers pay them with PayPal into the site's own
+- Both build up under **My MusterBid › Fees**, and sellers pay them with PayPal into the site's own
   PayPal account (the one the PayPal keys belong to)
 - Each fee is due within 30 days. A seller with an older unpaid fee can't list or feature new items until
   they pay; their live auctions carry on
@@ -74,8 +74,8 @@ Demo accounts (password `surplus123` for all):
 
 | Email | Who |
 | --- | --- |
-| `demo@quartermaster.test` | A buyer *and* seller with active bids, a win to pay for, a parcel to confirm and an item to ship |
-| `staff@quartermaster.test` | Moderator: sees the **Moderation** link in the top bar |
+| `demo@musterbid.test` | A buyer *and* seller with active bids, a win to pay for, a parcel to confirm and an item to ship |
+| `staff@musterbid.test` | Moderator: sees the **Moderation** link in the top bar |
 | `dan@example.com`, `bernd@example.com`, … | Sellers from the demo data |
 
 The demo auctions are timed relative to when you run the seed (some end within minutes), so run
@@ -114,6 +114,11 @@ tab, and change `PAYPAL_ENV` to `live` when you're ready for real money. Render 
 
 A live site starts empty (no demo data). Put your own email in `ADMIN_EMAILS`, then sign up with it to get
 the **Moderation** page.
+
+**Your own domain (musterbid.com):** in the Render service open **Settings › Custom Domains**, add
+`musterbid.com` and `www.musterbid.com`, then add the DNS records Render shows at your domain registrar.
+Render issues the HTTPS certificate itself once DNS points at it. (The Render service and disk are still
+named `quartermaster` from the site's working name; that only affects the default `.onrender.com` address.)
 
 ## How it's built
 
