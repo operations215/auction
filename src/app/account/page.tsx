@@ -30,7 +30,7 @@ import { PayPalCheckout } from "@/components/PayPalCheckout";
 import { ProfileForm } from "@/components/ProfileForm";
 import { SubmitButton } from "@/components/SubmitButton";
 
-export const metadata: Metadata = { title: "My Quartermaster" };
+export const metadata: Metadata = { title: "My MusterBid" };
 
 const TABS = [
   ["bidding", "Bidding", Gavel],
@@ -45,8 +45,8 @@ const FLASH: Record<string, string> = {
   paid: "Payment recorded. The seller has been told to ship your item.",
   shipped: "Marked as shipped. The buyer has been sent the tracking details.",
   received: "Thanks for confirming delivery. Don't forget to rate the seller.",
-  reviewed: "Thanks for your feedback. It helps every collector on Quartermaster.",
-  fees: "Fees paid. Thanks for supporting Quartermaster.",
+  reviewed: "Thanks for your feedback. It helps every collector on MusterBid.",
+  fees: "Fees paid. Thanks for supporting MusterBid.",
   featured: "Your lot is featured. It's on the home page and at the top of matching searches until it ends.",
 };
 
@@ -103,7 +103,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <div className="page-head">
         <div>
           <div className="eyebrow">Command post</div>
-          <h1>My Quartermaster</h1>
+          <h1>My MusterBid</h1>
           <p className="muted" style={{ margin: 0 }}>Signed in as <b>{user.display_name}</b></p>
         </div>
         <div className="row">
@@ -384,7 +384,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             {balance.owedCents > 0 && (
               <div className="fee-pay">
                 {paypalOn ? (
-                  <PayPalCheckout clientId={paypalClientId()} endpoint="/api/paypal/fees" doneText="Fees paid. Thanks for supporting Quartermaster." />
+                  <PayPalCheckout clientId={paypalClientId()} endpoint="/api/paypal/fees" doneText="Fees paid. Thanks for supporting MusterBid." />
                 ) : demo ? (
                   <form action={simulateFeePayment}>
                     <SubmitButton className="btn btn-brass btn-lg" pendingText="Processing…"><Wallet /> Pay {formatMoney(balance.owedCents)} (demo)</SubmitButton>

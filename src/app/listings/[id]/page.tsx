@@ -59,7 +59,7 @@ const FLASH: Record<string, [string, string]> = {
   listed: ["alert-ok", "Your auction is live. Share the link and watch the bids roll in."],
   "listed-featured": ["alert-ok", "Your auction is live and featured: it's on the home page and at the top of matching searches."],
   featured: ["alert-ok", "Your lot is featured. It's on the home page and at the top of matching searches until it ends."],
-  "fees-overdue": ["alert-error", "Pay your overdue seller fees (My Quartermaster › Fees) before featuring a lot."],
+  "fees-overdue": ["alert-error", "Pay your overdue seller fees (My MusterBid › Fees) before featuring a lot."],
   "feature-failed": ["alert-error", "Only your own live auctions can be featured."],
   cancelled: ["alert-warn", "This listing was cancelled and is no longer visible in search."],
   reported: ["alert-ok", "Thanks. Our team reviews every report, usually within a day."],
@@ -339,7 +339,7 @@ export default async function ListingPage({ params, searchParams }: Params) {
               <b>Buy with confidence</b>
             </div>
             <ul className="small" style={{ margin: 0, paddingLeft: 18, color: "var(--ink-2)", display: "grid", gap: 6 }}>
-              <li>Always pay through the PayPal button on Quartermaster, never by bank transfer or gift card.</li>
+              <li>Always pay through the PayPal button on MusterBid, never by bank transfer or gift card.</li>
               <li>Ask the seller for extra photos of markings or labels before you bid.</li>
               <li>Items not as described? PayPal buyer protection may cover you.</li>
             </ul>

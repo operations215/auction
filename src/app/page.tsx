@@ -119,7 +119,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="trust-strip" aria-label="Why Quartermaster">
+      <section className="trust-strip" aria-label="Why MusterBid">
         <div className="wrap">
           <div className="trust-item">
             <span className="ico"><Wallet /></span>
@@ -228,7 +228,7 @@ export default async function Home() {
           <div className="section-head">
             <div>
               <div className="eyebrow">Standard operating procedure</div>
-              <h2>How Quartermaster works</h2>
+              <h2>How MusterBid works</h2>
             </div>
             <Link href="/how-it-works">Full guide <ArrowRight size={15} /></Link>
           </div>

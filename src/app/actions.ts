@@ -61,8 +61,8 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
   if (!EMAIL_RE.test(email)) return { error: "Enter a valid email address.", fields };
   if (!/^[A-Za-z0-9_.-]{3,24}$/.test(name))
     return { error: "Usernames are 3 to 24 characters: letters, numbers, dots, dashes or underscores.", fields };
-  if (/quartermaster|admin|support|staff|moderator|official/i.test(name))
-    return { error: "Usernames can't suggest you work for Quartermaster. Please choose another.", fields };
+  if (/quartermaster|musterbid|admin|support|staff|moderator|official/i.test(name))
+    return { error: "Usernames can't suggest you work for MusterBid. Please choose another.", fields };
   if (password.length < 8) return { error: "Use a password of at least 8 characters.", fields };
   if (!fd.get("agree")) return { error: "Please agree to the listing rules and buyer protection terms.", fields };
 
@@ -134,7 +134,7 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
     fields[k] = str(fd, k);
   const fail = (error: string): FormState => ({ error, fields });
   if (feeBalance(user.id).overdue)
-    return fail(`You have seller fees that are more than ${FEE_DUE_DAYS} days old. Pay them from My Quartermaster › Fees, then publish your listing.`);
+    return fail(`You have seller fees that are more than ${FEE_DUE_DAYS} days old. Pay them from My MusterBid › Fees, then publish your listing.`);
 
   const title = fields.title;
   if (title.length < 8 || title.length > 90) return fail("Give your item a title of 8 to 90 characters.");

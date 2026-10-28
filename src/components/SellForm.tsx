@@ -214,7 +214,7 @@ export function SellForm(props: {
         <section className="card sell-step">
           <h3><span className="step-num">5</span> Confirm &amp; publish</h3>
           <div className="rules-box">
-            <b>Quartermaster does not allow:</b>
+            <b>MusterBid does not allow:</b>
             <ul>
               <li>Firearms, receivers, frames, magazines or ammunition, live or inert-but-convertible</li>
               <li>Explosives, grenades, fuzes or ordnance, unless certified inert and legally saleable where you are</li>

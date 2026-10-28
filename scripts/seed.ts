@@ -21,8 +21,8 @@ const hash = bcrypt.hashSync(PASSWORD, 10);
 
 type U = { name: string; email: string; location: string; bio: string; admin?: boolean; days: number; paypal?: boolean };
 const USERS: U[] = [
-  { name: "demo_collector", email: "demo@quartermaster.test", location: "Austin, TX", bio: "Cold War US and West German field gear. Always hunting for M-1965 jackets in large sizes.", days: 140, paypal: true },
-  { name: "QM-Staff", email: "staff@quartermaster.test", location: "HQ", bio: "Quartermaster moderation team.", admin: true, days: 400 },
+  { name: "demo_collector", email: "demo@musterbid.test", location: "Austin, TX", bio: "Cold War US and West German field gear. Always hunting for M-1965 jackets in large sizes.", days: 140, paypal: true },
+  { name: "MB-Staff", email: "staff@musterbid.test", location: "HQ", bio: "MusterBid moderation team.", admin: true, days: 400 },
   { name: "DepotDan", email: "dan@example.com", location: "Fayetteville, NC", bio: "Retired supply sergeant. Vietnam and Cold War US issue, honestly graded, shipped fast in double boxes.", days: 900, paypal: true },
   { name: "Bundeswehr_Bernd", email: "bernd@example.com", location: "Koblenz, Germany", bio: "West German Bundeswehr and NVA surplus. I speak English and Deutsch. Combined shipping on request.", days: 610, paypal: true },
   { name: "Tommy_Atkins_Kit", email: "tommy@example.com", location: "Aldershot, UK", bio: "British Army kit from WW1 to the Falklands. Every item comes with my written description of markings.", days: 780, paypal: true },
@@ -538,4 +538,4 @@ d.prepare("INSERT INTO reports (listing_id, reporter_id, reason, details) VALUES
 const count = (sql: string) => (d.prepare(sql).get() as { n: number }).n;
 console.log(`Seeded ${count("SELECT COUNT(*) AS n FROM users") - 1} members, ${count("SELECT COUNT(*) AS n FROM listings")} listings (${count("SELECT COUNT(*) AS n FROM listings WHERE status = 'active'")} live), ${count("SELECT COUNT(*) AS n FROM bids")} bids, ${count("SELECT COUNT(*) AS n FROM reviews")} reviews, ${count("SELECT COUNT(*) AS n FROM fees")} seller fees (${count("SELECT COUNT(*) AS n FROM fees WHERE status = 'owed'")} owed), ${count("SELECT COUNT(*) AS n FROM listings WHERE featured_at IS NOT NULL")} featured lots.`);
 console.log(`System notices from user #${systemUserId()}.`);
-console.log(`Log in as demo@quartermaster.test (buyer and seller) or staff@quartermaster.test (moderator). Password: ${PASSWORD}`);
+console.log(`Log in as demo@musterbid.test (buyer and seller) or staff@musterbid.test (moderator). Password: ${PASSWORD}`);

@@ -440,7 +440,7 @@ export function formatDate(s: string, withTime = false) {
   });
 }
 
-/** An automated notice, delivered to the recipient's inbox from the Quartermaster account. */
+/** An automated notice, delivered to the recipient's inbox from the MusterBid account. */
 export function sendSystemMessage(toId: number, listingId: number | null, body: string) {
   db()
     .prepare("INSERT INTO messages (sender_id, recipient_id, listing_id, body, is_system) VALUES (?, ?, ?, ?, 1)")

@@ -150,7 +150,7 @@ export function featureListing(listingId: number, sellerId: number): { ok: true;
 /** The sentence added to the seller's "payment received" notice when a fee was charged. */
 export function feeNotice(fee: { amountCents: number; rateBp: number } | null) {
   if (!fee) return "";
-  return ` A ${formatRate(fee.rateBp)} seller fee of ${formatMoney(fee.amountCents)} has been added to your account. Pay it from My Quartermaster › Fees within ${FEE_DUE_DAYS} days.`;
+  return ` A ${formatRate(fee.rateBp)} seller fee of ${formatMoney(fee.amountCents)} has been added to your account. Pay it from My MusterBid › Fees within ${FEE_DUE_DAYS} days.`;
 }
 
 export function dueDate(createdAt: string) {
